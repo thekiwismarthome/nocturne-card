@@ -128,7 +128,7 @@ function tile(c, p) {
 const KINDS = {};
 const SIZE = { k: 'size', l: 'Size', t: 'seg', o: [['small', 'Small'], ['wide', 'Wide']], d: 'small' };
 const SHOW_STATE = { k: 'show_state', l: 'Show state line', t: 'sw', d: false };
-const SQUARE = { k: 'square', l: 'Square tile (so tiles line up like a grid)', t: 'sw', d: false };
+const SQUARE = { k: 'square', l: 'Square tile (so tiles line up like a grid)', t: 'sw', d: true };
 function kind(def) { def.opts = [...(def.opts || []), ...(def.square ? [{ ...SQUARE, when: def.square }] : []), ...(def.noImage ? [] : IMG_OPTS)]; def.defaults = Object.assign({}, ...(def.opts || []).map(o => ({ [o.k]: o.d !== undefined ? o.d : IMG_DEFAULTS[o.k] })), def.noImage ? {} : IMG_DEFAULTS); KINDS[def.id] = def; return def; }
 
 /* ---------- the card ---------- */
