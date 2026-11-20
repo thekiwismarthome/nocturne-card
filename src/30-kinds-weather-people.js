@@ -119,7 +119,7 @@ function avatar(c, id, A, ringMode, col, st) {
 }
 const personMode = (c, id) => { const s = c.st(id); return !s || BAD_STATES.includes(s) ? 'unknown' : s === 'home' ? 'home' : 'away'; };
 kind({
-  id: 'person', name: 'Person', domains: ['person'], icon: 'account', grid: { columns: 6, rows: 3 }, tap: { action: 'more-info' }, hold: { action: 'more-info' },
+  id: 'person', square: c => c.layout !== 'wide', name: 'Person', domains: ['person'], icon: 'account', grid: { columns: 6, rows: 3 }, tap: { action: 'more-info' }, hold: { action: 'more-info' },
   opts: [{ k: 'layout', l: 'Layout', t: 'seg', o: [['portrait', 'Portrait'], ['wide', 'Wide'], ['photo', 'Photo']], d: 'portrait' }, { k: 'avatar', l: 'Avatar', t: 'seg', o: [['photo', 'Picture'], ['initials', 'Initials'], ['icon', 'Icon']], d: 'photo' }, { k: 'ring', l: 'Ring shows', t: 'seg', o: [['presence', 'Home / away'], ['battery', 'Phone battery'], ['none', 'Nothing']], d: 'presence' },
     { k: 'accent', l: 'Colour', t: 'select', o: [['auto', 'Their own colour'], ['accent', 'Theme accent'], ['water', 'Water'], ['warm', 'Warm'], ['good', 'Green']], d: 'auto' }, { k: 'color', l: 'Custom colour (any CSS colour, optional)', t: 'text' },
     { k: 'show_since', l: 'Show “since” time', t: 'sw', d: true }, { k: 'show_battery', l: 'Phone battery', t: 'sw', d: true }, { k: 'show_place', l: 'Where they are (when away)', t: 'sw', d: true }, { k: 'show_distance', l: 'Distance from home (when away)', t: 'sw', d: true },

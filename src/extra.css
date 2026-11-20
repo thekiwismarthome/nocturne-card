@@ -85,3 +85,12 @@ ha-icon { display: inline-flex; }
 .sx.cl .slw .ncround { width: 34px; height: 34px; } .sx.cl .slw .ncround ha-icon { --mdc-icon-size: 17px; }
 .sx.cl .nm span { white-space: normal; font-size: 11.5px; line-height: 1.25; }
 .sx.cl .hd .nm b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* square option: the tile keeps a 1:1 shape and the dashboard gives it an automatic height */
+:host(.sq) { height: auto; }
+:host(.sq) .nc, :host(.sq) .bc { height: auto; aspect-ratio: 1; min-height: 0; }
+:host(.sq) .bc { padding: 16px; }
+:host(.sq) .bc .imgcell { width: 42px; height: 42px; }
+:host(.sq) .bc .f-ctl { margin-top: 6px !important; }
+:host(.sq) .bc .f-ctl .ncround { width: 38px; height: 38px; }
+:host(.sq) .bc .grid > div[style*="grid-area:n"] { margin-top: 6px !important; }

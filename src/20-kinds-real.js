@@ -2,7 +2,7 @@
 const CLIMATE_RGB = { heat: '255,110,60', cool: '50,165,255', dry: '40,210,160', auto: '140,120,255', heat_cool: '140,120,255', fan_only: '80,200,255' };
 const rndBtn = (icon, onclick, color) => `<button class="ncround" aria-label="${icon}" style="${color ? 'color:' + color : ''}" onclick="${onclick}">${icn(icon, 19)}</button>`;
 kind({
-  id: 'climate', name: 'Climate', domains: ['climate'], icon: 'thermostat', grid: { columns: 12, rows: 5 }, tap: { action: 'none' }, hold: { action: 'more-info' },
+  id: 'climate', square: c => c.variant === 'compact', name: 'Climate', domains: ['climate'], icon: 'thermostat', grid: { columns: 12, rows: 5 }, tap: { action: 'none' }, hold: { action: 'more-info' },
   opts: [{ k: 'variant', l: 'Layout', t: 'seg', o: [['dial', 'Dial'], ['compact', 'Compact']], d: 'dial' }, { k: 'side', l: 'Mode, fan, indoor and humidity column', t: 'sw', d: true }, { k: 'dial_size', l: 'Dial size', t: 'range', min: 140, max: 210, u: 'px', d: 210 }, { k: 'step', l: 'Temperature step', t: 'seg', o: [['0.5', '0.5°'], ['1', '1°']], d: '1' }, ...switchOpts(c => c.variant === 'compact')],
   after(c, root) { sxAfter(c, root); },
   gridFor: c => c.o.variant === 'compact' ? { columns: 6, rows: 3 } : { columns: 12, rows: 5 },
@@ -113,7 +113,7 @@ kind({
 
 /* ============ lock ============ */
 kind({
-  id: 'lock', name: 'Lock', domains: ['lock'], icon: 'lock', grid: { columns: 6, rows: 3 }, tap: { action: 'none' }, hold: { action: 'more-info' },
+  id: 'lock', square: () => true, name: 'Lock', domains: ['lock'], icon: 'lock', grid: { columns: 6, rows: 3 }, tap: { action: 'none' }, hold: { action: 'more-info' },
   opts: [{ k: 'show_battery', l: 'Show battery in the label', t: 'sw', d: true }, { k: 'battery_entity', l: 'Battery sensor (if not an attribute of the lock)', t: 'entity', domains: ['sensor'] }, { k: 'confirm', l: 'Ask before locking or unlocking', t: 'sw', d: true }],
   extraIds: c => [c.o.battery_entity],
   toggle(c, id) { const l = c.st(id) === 'locked'; if (c.o.confirm && !window.confirm(`${l ? 'Unlock' : 'Lock'} ${c.title}?`)) return; c.call('lock', l ? 'unlock' : 'lock', { entity_id: id }); },
@@ -126,7 +126,7 @@ kind({
 
 /* ============ vacuum ============ */
 kind({
-  id: 'vacuum', name: 'Vacuum', domains: ['vacuum'], icon: 'robot-vacuum', grid: { columns: 6, rows: 3 }, tap: { action: 'none' }, hold: { action: 'more-info' },
+  id: 'vacuum', square: () => true, name: 'Vacuum', domains: ['vacuum'], icon: 'robot-vacuum', grid: { columns: 6, rows: 3 }, tap: { action: 'none' }, hold: { action: 'more-info' },
   opts: [{ k: 'battery_entity', l: 'Battery sensor (if not an attribute)', t: 'entity', domains: ['sensor'] }, { k: 'bin_entity', l: 'Bin full sensor', t: 'entity', domains: ['binary_sensor'] }, { k: 'ring', l: 'Battery ring around the icon', t: 'sw', d: true }, { k: 'buttons', l: 'Start and Dock buttons', t: 'sw', d: true }],
   extraIds: c => [c.o.battery_entity, c.o.bin_entity],
   render(c) {
@@ -140,7 +140,7 @@ kind({
 
 /* ============ vehicle ============ */
 kind({
-  id: 'vehicle', name: 'Vehicle', domains: ['sensor'], icon: 'car-electric', grid: { columns: 6, rows: 3 }, tap: { action: 'more-info' }, hold: { action: 'more-info' },
+  id: 'vehicle', square: () => true, name: 'Vehicle', domains: ['sensor'], icon: 'car-electric', grid: { columns: 6, rows: 3 }, tap: { action: 'more-info' }, hold: { action: 'more-info' },
   opts: [{ k: 'range_entity', l: 'Range sensor', t: 'entity', domains: ['sensor'] }, { k: 'lock_entity', l: 'Lock', t: 'entity', domains: ['lock'] }, { k: 'charging_entity', l: 'Charging sensor', t: 'entity', domains: ['binary_sensor'] }, { k: 'time_entity', l: 'Charge time remaining sensor', t: 'entity', domains: ['sensor'] }, { k: 'show_range', l: 'Show range and lock state', t: 'sw', d: true }, { k: 'bar', l: 'Battery bar', t: 'sw', d: true }],
   extraIds: c => [c.o.range_entity, c.o.lock_entity, c.o.charging_entity, c.o.time_entity],
   render(c) {

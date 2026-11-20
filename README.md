@@ -5,7 +5,7 @@
 
 One Home Assistant card for every glass tile on a dashboard. You pick a **kind** (light, climate, media player, weather, person ...), pick an **entity of that kind**, and set the options. The entity picker only offers entities of the right domain, so a Light card only lists `light.*`.
 
-> **Beta.** This is `0.1.0-beta.5`. It works, but expect rough edges, and options may be renamed before 1.0. Please [open an issue](https://github.com/thekiwismarthome/nocturne-card/issues) if something looks wrong.
+> **Beta.** This is `0.1.0-beta.6`. It works, but expect rough edges, and options may be renamed before 1.0. Please [open an issue](https://github.com/thekiwismarthome/nocturne-card/issues) if something looks wrong.
 
 ![Tiles](docs/preview-tiles.png)
 ![Cards](docs/preview-cards.png)
@@ -151,6 +151,19 @@ switch_softness: 40      # degrees, 0 to 50
 On the compact climate tile (`variant: compact`) the icon and name move into a row so the mode buttons still fit above the switch, and the switch glows in the colour of the mode (blue cooling, orange heating).
 
 `switch_softness` is how far the glass flares where it meets the switch. It stops growing when the edge of the tile runs out of room, and on a narrow tile `switch_gap` is limited to about 12 px.
+
+### Square tiles
+
+Set `square: true` to keep a small tile at a 1:1 shape, so a row of tiles lines up like a grid whatever the screen width. The dashboard gives the card an automatic height, so the tile's height follows its width.
+
+```yaml
+type: custom:nocturne-card
+kind: light
+entity: light.lounge
+square: true
+```
+
+Available on the light, switch, fan, cover, sensor, lock, vacuum, vehicle, person (portrait and photo) and compact climate tiles. Wide tiles ignore it. A very narrow square tile has less room, so long names are cut short and the brightness slider sits closer to the switch.
 
 ### Weather
 

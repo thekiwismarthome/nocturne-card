@@ -128,7 +128,8 @@ function tile(c, p) {
 const KINDS = {};
 const SIZE = { k: 'size', l: 'Size', t: 'seg', o: [['small', 'Small'], ['wide', 'Wide']], d: 'small' };
 const SHOW_STATE = { k: 'show_state', l: 'Show state line', t: 'sw', d: false };
-function kind(def) { def.opts = [...(def.opts || []), ...(def.noImage ? [] : IMG_OPTS)]; def.defaults = Object.assign({}, ...(def.opts || []).map(o => ({ [o.k]: o.d !== undefined ? o.d : IMG_DEFAULTS[o.k] })), def.noImage ? {} : IMG_DEFAULTS); KINDS[def.id] = def; return def; }
+const SQUARE = { k: 'square', l: 'Square tile (so tiles line up like a grid)', t: 'sw', d: false };
+function kind(def) { def.opts = [...(def.opts || []), ...(def.square ? [{ ...SQUARE, when: def.square }] : []), ...(def.noImage ? [] : IMG_OPTS)]; def.defaults = Object.assign({}, ...(def.opts || []).map(o => ({ [o.k]: o.d !== undefined ? o.d : IMG_DEFAULTS[o.k] })), def.noImage ? {} : IMG_DEFAULTS); KINDS[def.id] = def; return def; }
 
 /* ---------- the card ---------- */
 let SEQ = 0;
@@ -186,6 +187,7 @@ class NocturneCard extends HTMLElement {
     if (!this._hass || !this.k) return;
     let body;
     try { body = this.k.domains && !this.e ? `<div class="nc tile" style="--rows:3;padding:16px"><div class="in" style="display:grid;align-content:center;gap:6px"><span class="ic">${icn(this.k.icon)}</span><b>${esc(this.k.name)}</b><span style="font-size:12px;color:var(--secondary-text-color)">Choose an entity in the card editor</span></div></div>` : this.k.render(this); this.style.setProperty('--rows', this._grid().rows); } catch (err) { console.error('[nocturne-card]', err); body = `<div class="nc tile" style="--rows:3;padding:16px"><div class="in"><b>nocturne-card</b><span style="font-size:12px;color:var(--n-bad)">${esc(err.message)}</span></div></div>`; }
+    this.classList.toggle('sq', this._isSq());
     this.shadowRoot.innerHTML = `<style>${CSS}</style>${body}`;
     if (!this._bound) this._bind();
     if (this.k.after) this.k.after(this, this.shadowRoot);
@@ -244,6 +246,8 @@ class NocturneCard extends HTMLElement {
   }
 
   _grid() { if (!this.k) return { columns: 6, rows: 3 }; const g = this.k.gridFor ? this.k.gridFor(this) : this.k.grid; return { columns: this.o.size === 'wide' ? 12 : g.columns, rows: g.rows }; }
+  /* square tiles: the height follows the width, so the tile needs no fixed number of rows */
+  _isSq() { return !!(this.k && this.o.square && this.k.square && this.k.square(this.o) && this._grid().columns <= 6); }
   getCardSize() { return this._grid().rows; }
-  getGridOptions() { const g = this._grid(); return { columns: g.columns, rows: g.rows, min_columns: 3, min_rows: 2 }; }
+  getGridOptions() { const g = this._grid(); return this._isSq() ? { columns: g.columns, rows: 'auto', min_columns: 3 } : { columns: g.columns, rows: g.rows, min_columns: 3, min_rows: 2 }; }
 }

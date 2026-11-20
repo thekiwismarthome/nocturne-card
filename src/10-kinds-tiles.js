@@ -9,7 +9,7 @@ const lightInfo = (c, id) => {
   return { s, a, on, caps, lv, col };
 };
 kind({
-  id: 'light', name: 'Light', domains: ['light'], icon: 'lightbulb', grid: { columns: 6, rows: 3 }, tap: { action: 'toggle' }, hold: { action: 'popup' },
+  id: 'light', square: c => c.variant !== 'wheel', name: 'Light', domains: ['light'], icon: 'lightbulb', grid: { columns: 6, rows: 3 }, tap: { action: 'toggle' }, hold: { action: 'popup' },
   opts: [{ k: 'variant', l: 'Layout', t: 'seg', o: [['tile', 'Tile'], ['wheel', 'Colour wheel card']], d: 'tile' }, { k: 'layout', l: 'Wheel card shape', t: 'seg', o: [['tall', 'Tall'], ['wide', 'Wide']], d: 'tall' }, SIZE, { k: 'show_slider', l: 'Brightness slider on the card', t: 'sw', d: true }, SHOW_STATE, ...SWITCH_OPTS],
   tapFor: c => c.o.variant === 'wheel' ? { action: 'none' } : { action: 'toggle' },
   holdFor: c => c.o.variant === 'wheel' ? { action: 'more-info' } : { action: 'popup' },
@@ -88,7 +88,7 @@ function openLightPopup(c) {
 /* ----- switch / input_boolean / valve ----- */
 const swOn = s => ['on', 'open', 'opening'].includes(s);
 kind({
-  id: 'switch', name: 'Switch', domains: ['switch', 'input_boolean', 'valve', 'automation', 'script'], icon: 'power', grid: { columns: 6, rows: 3 }, tap: { action: 'toggle' }, hold: { action: 'more-info' },
+  id: 'switch', square: () => true, name: 'Switch', domains: ['switch', 'input_boolean', 'valve', 'automation', 'script'], icon: 'power', grid: { columns: 6, rows: 3 }, tap: { action: 'toggle' }, hold: { action: 'more-info' },
   opts: [SIZE, { k: 'accent', l: 'Accent colour', t: 'seg', o: [['accent', 'Accent'], ['water', 'Water'], ['air', 'Air'], ['warm', 'Warm']], d: 'accent' }, SHOW_STATE, ...SWITCH_OPTS],
   after: sxAfter,
   render(c) { const on = swOn(c.st(c.e)), valve = dom(c.e) === 'valve'; return tile(c, { cls: c.o.accent, on, lit: on, sub: c.o.show_state ? (valve ? (on ? 'Open' : 'Closed') : (on ? 'On' : 'Off')) : '' }); },
@@ -96,7 +96,7 @@ kind({
 
 /* ----- fan ----- */
 kind({
-  id: 'fan', name: 'Fan', domains: ['fan'], icon: 'fan', grid: { columns: 6, rows: 3 }, tap: { action: 'toggle' }, hold: { action: 'more-info' },
+  id: 'fan', square: () => true, name: 'Fan', domains: ['fan'], icon: 'fan', grid: { columns: 6, rows: 3 }, tap: { action: 'toggle' }, hold: { action: 'more-info' },
   opts: [SIZE, { k: 'accent', l: 'Accent colour', t: 'seg', o: [['air', 'Air'], ['water', 'Water'], ['accent', 'Accent']], d: 'air' }, { k: 'steps', l: 'Speed control', t: 'seg', o: [['smooth', 'Smooth %'], ['3', '3 steps'], ['off', 'Hidden']], d: 'smooth' }, SHOW_STATE, ...SWITCH_OPTS],
   after: sxAfter,
   render(c) {
@@ -108,7 +108,7 @@ kind({
 
 /* ----- cover ----- */
 kind({
-  id: 'cover', name: 'Cover', domains: ['cover'], icon: 'garage', grid: { columns: 6, rows: 3 }, tap: { action: 'more-info' }, hold: { action: 'more-info' },
+  id: 'cover', square: () => true, name: 'Cover', domains: ['cover'], icon: 'garage', grid: { columns: 6, rows: 3 }, tap: { action: 'more-info' }, hold: { action: 'more-info' },
   opts: [SIZE, { k: 'slider', l: 'Position slider (if the device supports it)', t: 'sw', d: true }],
   toggle: (c, id) => c.call('cover', 'toggle', { entity_id: id }),
   render(c) {
@@ -123,7 +123,7 @@ kind({
 
 /* ----- sensor ----- */
 kind({
-  id: 'sensor', name: 'Sensor', domains: ['sensor', 'binary_sensor', 'input_number', 'number'], icon: 'thermometer', grid: { columns: 6, rows: 3 }, tap: { action: 'more-info' }, hold: { action: 'more-info' },
+  id: 'sensor', square: () => true, name: 'Sensor', domains: ['sensor', 'binary_sensor', 'input_number', 'number'], icon: 'thermometer', grid: { columns: 6, rows: 3 }, tap: { action: 'more-info' }, hold: { action: 'more-info' },
   opts: [{ k: 'variant', l: 'Layout', t: 'seg', o: [['auto', 'Auto'], ['temp', 'Temperature'], ['value', 'Plain value']], d: 'auto' }, { k: 'secondary_entity', l: 'Secondary entity (e.g. humidity)', t: 'entity', domains: ['sensor'] }, { k: 'bar', l: 'Show bar for the secondary value', t: 'sw', d: true }],
   extraIds: c => [c.cfg.secondary_entity],
   render(c) {
