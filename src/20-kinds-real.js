@@ -45,8 +45,8 @@ function resolvePlayer(c) {
 }
 kind({
   id: 'media', name: 'Media player', domains: ['media_player'], icon: 'speaker', grid: { columns: 12, rows: 3 }, tap: { action: 'none' }, hold: { action: 'none' },
-  opts: [{ k: 'variant', l: 'Layout', t: 'seg', o: [['compact', 'Compact tile'], ['full', 'Full player']], d: 'compact' }, { k: 'volume', l: 'Volume slider', t: 'sw', d: true }, { k: 'shuffle', l: 'Shuffle and repeat (full player)', t: 'sw', d: true }, { k: 'spin', l: 'Spin the cover while playing (full player)', t: 'sw', d: false },
-    { k: 'icon_artwork', l: 'Show the artwork in the top-left button', t: 'sw', d: false }, { k: 'icon_spin', l: 'Rotate that artwork while playing', t: 'sw', d: true },
+  opts: [{ k: 'variant', l: 'Layout', t: 'seg', o: [['compact', 'Compact tile'], ['full', 'Full player']], d: 'compact' }, { k: 'volume', l: 'Volume slider', t: 'sw', d: true }, { k: 'shuffle', l: 'Shuffle and repeat buttons', t: 'sw', d: true }, { k: 'spin', l: 'Rotate the artwork while playing (tile button and full player)', t: 'sw', d: true },
+    { k: 'icon_artwork', l: 'Show the artwork in the top-left button', t: 'sw', d: false },
     { k: 'artwork', l: 'Artwork as background', t: 'seg', o: [['off', 'Off'], ['sharp', 'Sharp'], ['soft', 'Soft'], ['blurred', 'Blurred']], d: 'off' },
     { k: 'players', l: 'Players this card can offer', t: 'entity', domains: ['media_player'], multi: true }, { k: 'pinned_player', l: 'Pinned player', t: 'entity', domains: ['media_player'] },
     { k: 'start', l: 'Start on', t: 'seg', o: [['local', 'This device'], ['pinned', 'Pinned player'], ['last', 'Last used']], d: 'local' }],
@@ -60,10 +60,18 @@ kind({
     const play = s && s.state === 'playing', on = s && !['off', 'unavailable'].includes(s.state);
     const label = a.media_title ? `${esc(a.media_title)}${a.media_artist ? ' · ' + esc(a.media_artist) : ''}` : esc(nice(s ? s.state : 'unavailable'));
     const T = (svc, ic, col) => round(ic, 'media_player.' + svc, { entity_id: id }, col);
-    const pic = a.entity_picture, art = o.icon_artwork && pic ? `<div style="width:100%;height:100%;border-radius:50%;background:url('${esc(c.url(pic))}') center/cover;animation:ncspin 12s linear infinite;animation-play-state:${play && o.icon_spin ? 'running' : 'paused'}"></div>` : '';
+    const pic = a.entity_picture, art = o.icon_artwork && pic ? `<div style="width:100%;height:100%;border-radius:50%;background:url('${esc(c.url(pic))}') center/cover;animation:ncspin 12s linear infinite;animation-play-state:${play && o.spin ? 'running' : 'paused'}"></div>` : '';
     return bcard(c, { name: c.cfg.name || (s ? c.fname(id) : c.title), icon: c.cfg.icon || a.icon || c.k.icon, iconHtml: art, iconColor: play ? 'var(--accent-color)' : undefined, label, tog: tgl(on, 'toggle', id), rows: 3, wide: true, image: undefined, areas: "'i tr tog' 'n n n' 'l l l' 'ctl ctl ctl'", cols: 'auto 1fr auto',
       fields: { tr: `<div style="display:flex;gap:6px">${T('media_previous_track', 'skip-previous')}${T('media_play_pause', play ? 'pause' : 'play', 'var(--accent-color)')}${T('media_next_track', 'skip-next')}</div>` }, fieldCss: { tr: 'justify-self:center;align-self:center;' },
-      ctl: o.volume ? `<div class="ncmslider">${slider('media_player.volume_set', { entity_id: id }, 'volume_level', Math.round((a.volume_level || 0) * 100), { min: 0, scale: 0.01, label: 'Volume' })}</div>` : '' }).replace('<div class="grid"', `${artLayer(c, id)}<div class="grid"`);
+      ctl: (() => {
+        const feat = num(a.supported_features) || 0, canShuf = o.shuffle && (a.shuffle !== undefined || (feat & 32768)), canRep = o.shuffle && (a.repeat !== undefined || (feat & 262144));
+        const sm = (icon, svc, data, on, label) => `<button class="ncround" style="width:34px;height:34px;${on ? 'color:var(--accent-color)' : ''}" aria-label="${label}" aria-pressed="${!!on}" ${svcAttr('media_player.' + svc, data)}>${icn(icon, 17)}</button>`;
+        const rep = a.repeat || 'off', nextRep = { off: 'all', all: 'one', one: 'off' }[rep] || 'all';
+        const shuf = canShuf ? sm(a.shuffle ? 'shuffle' : 'shuffle-disabled', 'shuffle_set', { entity_id: id, shuffle: !a.shuffle }, a.shuffle, 'Shuffle') : '';
+        const rp = canRep ? sm(rep === 'one' ? 'repeat-once' : rep === 'all' ? 'repeat' : 'repeat-off', 'repeat_set', { entity_id: id, repeat: nextRep }, rep !== 'off', 'Repeat') : '';
+        const vol = o.volume ? `<div class="ncmslider" style="flex:1;min-width:0">${slider('media_player.volume_set', { entity_id: id }, 'volume_level', Math.round((a.volume_level || 0) * 100), { min: 0, scale: 0.01, label: 'Volume' })}</div>` : '<div style="flex:1"></div>';
+        return shuf || rp || o.volume ? `<div style="display:flex;align-items:center;gap:8px">${shuf}${vol}${rp}</div>` : '';
+      })() }).replace('<div class="grid"', `${artLayer(c, id)}<div class="grid"`);
   },
   after(c, root) {
     const host = root.querySelector('.mc'); if (!host) return;

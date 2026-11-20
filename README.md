@@ -5,7 +5,7 @@
 
 One Home Assistant card for every glass tile on a dashboard. You pick a **kind** (light, climate, media player, weather, person ...), pick an **entity of that kind**, and set the options. The entity picker only offers entities of the right domain, so a Light card only lists `light.*`.
 
-> **Beta.** This is `0.1.0-beta.2`. It works, but expect rough edges, and options may be renamed before 1.0. Please [open an issue](https://github.com/thekiwismarthome/nocturne-card/issues) if something looks wrong.
+> **Beta.** This is `0.1.0-beta.3`. It works, but expect rough edges, and options may be renamed before 1.0. Please [open an issue](https://github.com/thekiwismarthome/nocturne-card/issues) if something looks wrong.
 
 ![Tiles](docs/preview-tiles.png)
 ![Cards](docs/preview-cards.png)
@@ -117,8 +117,9 @@ players:                         # which players this card may offer
 pinned_player: media_player.office_tablet
 start: local                     # local | pinned | last
 artwork: blurred                 # off | sharp | soft | blurred
-icon_artwork: true               # show the artwork in the top-left button
-icon_spin: true                  # ...and rotate it while playing
+icon_artwork: true               # show the artwork in the top-left button (tile)
+spin: true                       # rotate the artwork while playing (tile button and full player)
+shuffle: true                    # shuffle and repeat buttons on both layouts
 ```
 
 Only the top-left button opens Home Assistant's more-info dialog. Tapping the body of the tile or anything in the full player does nothing extra.
@@ -133,6 +134,8 @@ kind: weather
 entity: weather.home
 panel: hero                      # hero | hourly | daily | details
 ```
+
+The `hero` panel has animated weather icons (spinning sun rays, drifting clouds, falling rain and snow, lightning, fog, wind) that switch to the moon at night using `sun.sun`, and the card is tinted by the condition. Optional `feels_entity` (a feels-like sensor) and `warnings_entity` (a sensor whose state is the number of active warnings) add the feels-like value and a warning chip.
 
 Forecasts come from Home Assistant's own weather forecast subscription, so any weather integration works. Rain radar, tides and weather warnings are not in the beta.
 
