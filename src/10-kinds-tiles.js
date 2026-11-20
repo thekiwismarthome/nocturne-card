@@ -10,14 +10,51 @@ const lightInfo = (c, id) => {
 };
 kind({
   id: 'light', name: 'Light', domains: ['light'], icon: 'lightbulb', grid: { columns: 6, rows: 3 }, tap: { action: 'toggle' }, hold: { action: 'popup' },
-  opts: [SIZE, { k: 'show_slider', l: 'Brightness slider on the card', t: 'sw', d: true }, SHOW_STATE],
+  opts: [{ k: 'variant', l: 'Layout', t: 'seg', o: [['tile', 'Tile'], ['wheel', 'Colour wheel card']], d: 'tile' }, { k: 'layout', l: 'Wheel card shape', t: 'seg', o: [['tall', 'Tall'], ['wide', 'Wide']], d: 'tall' }, SIZE, { k: 'show_slider', l: 'Brightness slider on the card', t: 'sw', d: true }, SHOW_STATE],
+  tapFor: c => c.o.variant === 'wheel' ? { action: 'none' } : { action: 'toggle' },
+  holdFor: c => c.o.variant === 'wheel' ? { action: 'more-info' } : { action: 'popup' },
+  gridFor: c => { if (c.o.variant !== 'wheel') return { columns: 6, rows: 3 }; const i = lightInfo(c, c.e), wide = c.o.layout === 'wide'; return wide ? { columns: 'full', rows: i.caps === 'color' ? 5 : 3 } : { columns: 12, rows: i.caps === 'color' ? 7 : i.caps === 'dim' ? 3 : 2 }; },
+  after(c, root) { if (c.o.variant === 'wheel') wheelAfter(c, root); },
   render(c) {
+    if (c.o.variant === 'wheel') return wheelCard(c);
     const i = lightInfo(c, c.e), o = c.o, dim = i.caps !== 'onoff';
     const sub = o.show_state ? (i.on ? 'On' + (dim ? ` · ${i.lv}%` : '') : 'Off') : '';
     return tile(c, { cls: 'lit', on: i.on, lit: true, sub, style: `--lv:${i.on ? i.lv : 0}%;--lc:${i.col}`, slider: dim && o.show_slider ? slider('light.turn_on', { entity_id: c.e }, 'brightness_pct', i.lv, { label: 'Brightness', dis: !i.on }) : '' });
   },
   popup: c => openLightPopup(c),
 });
+
+/* ----- the standalone colour wheel card (light, variant: wheel) ----- */
+const hsvA = (h, s) => hsv(h, s).match(/\d+/g).map(Number);
+function wheelCard(c) {
+  const i = lightInfo(c, c.e), o = c.o, wide = o.layout === 'wide', color = i.caps === 'color', dim = i.caps !== 'onoff', hs = i.a.hs_color || [38, 60];
+  const rgb = color && i.on ? hsvA(hs[0], hs[1] / 100) : (color ? hsvA(hs[0], hs[1] / 100) : [255, 170, 60]), lv = i.lv || (i.on ? 100 : 0), last = Math.max(1, lv);
+  const g = c.k.gridFor(c);
+  return `<div class="lc ${i.on ? 'on' : ''} ${wide ? 'wide' : ''}" style="--rows:${g.rows};--c:${rgb.join(',')};--glow:rgba(${rgb.join(',')},${(0.14 + 0.36 * lv / 100).toFixed(3)});--p:${((last - 1) / 99).toFixed(4)};--lc:rgb(${rgb.join(',')})">${imgLayer(c)}
+    <div class="hd"><span class="disc" data-act="more-info">${icn(c.icon, 22)}</span><span class="t"><span class="nm">${esc(c.title)}</span><span class="st">${i.on ? 'On' + (dim ? ' · ' + lv + '%' : '') : 'Off'}</span></span>${tgl(i.on, 'toggle', c.e)}</div>
+    ${color ? `<div class="wheel" style="--w:${wide ? 200 : 232}px"><div class="pad" data-pad data-h="${hs[0]}" data-s="${hs[1] / 100}" tabindex="0" role="application" aria-label="Colour wheel"><canvas></canvas><span class="thumb"></span></div></div>` : ''}
+    <div class="ctl">${dim && o.show_slider ? `<div class="br">${icn('brightness-5', 20)}${slider('light.turn_on', { entity_id: c.e }, 'brightness_pct', last, { label: 'Brightness' })}${icn('brightness-7', 20)}</div>` : ''}${color ? `<div class="chips"><span class="chip"><i></i><span data-hs>Hue ${Math.round(hs[0])}° · Sat ${Math.round(hs[1])}%</span></span></div>` : ''}</div></div>`;
+}
+function wheelAfter(c, root) {
+  const pad = root.querySelector('[data-pad]'); if (!pad) return;
+  const cv = pad.querySelector('canvas'), thumb = pad.querySelector('.thumb'), card = root.querySelector('.lc'), id = c.e;
+  const css = cv.clientWidth || 208, dpr = Math.min(window.devicePixelRatio || 1, 2), n = Math.round(css * dpr), R = n / 2; cv.width = cv.height = n;
+  const ctx = cv.getContext('2d'), img = ctx.createImageData(n, n), d = img.data;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { const dx = x + .5 - R, dy = y + .5 - R, dist = Math.hypot(dx, dy); if (dist > R) continue; const h = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360, k = hsvA(h, Math.min(dist / R, 1)), p = (y * n + x) * 4; d[p] = k[0]; d[p + 1] = k[1]; d[p + 2] = k[2]; d[p + 3] = Math.round(255 * clamp(R - dist, 0, 1)); }
+  ctx.putImageData(img, 0, 0);
+  let h = +pad.dataset.h, s = +pad.dataset.s;
+  const place = () => { const r = pad.clientWidth / 2, a = h * Math.PI / 180; thumb.style.left = r + Math.cos(a) * s * r + 'px'; thumb.style.top = r + Math.sin(a) * s * r + 'px'; const rgb = hsvA(h, s).join(','); card.style.setProperty('--c', rgb); card.style.setProperty('--lc', `rgb(${rgb})`); const t = card.querySelector('[data-hs]'); if (t) t.textContent = `Hue ${Math.round(h)}° · Sat ${Math.round(s * 100)}%`; };
+  place();
+  let down = false, last = 0;
+  const send = () => c.call('light', 'turn_on', { entity_id: id, hs_color: [Math.round(h), Math.round(s * 100)] });
+  const pick = (e, commit) => { const r = pad.getBoundingClientRect(), R2 = r.width / 2, dx = e.clientX - (r.left + R2), dy = e.clientY - (r.top + R2); h = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360; s = clamp(Math.hypot(dx, dy) / R2, 0, 1); place(); const now = Date.now(); if (commit || now - last > 250) { last = now; send(); } };
+  pad.addEventListener('pointerdown', e => { down = true; c._busy = true; pad.setPointerCapture(e.pointerId); pick(e); });
+  pad.addEventListener('pointermove', e => down && pick(e));
+  const end = e => { if (!down) return; down = false; pick(e, true); setTimeout(() => { c._busy = false; c._update(true); }, 400); };
+  pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', () => { down = false; c._busy = false; });
+  pad.addEventListener('keydown', e => { const k = e.key; if (k === 'ArrowLeft') h = (h + 355) % 360; else if (k === 'ArrowRight') h = (h + 5) % 360; else if (k === 'ArrowUp') s = clamp(s + .05, 0, 1); else if (k === 'ArrowDown') s = clamp(s - .05, 0, 1); else return; e.preventDefault(); place(); send(); });
+  const sl = root.querySelector('.lc input.sl'); if (sl) sl.addEventListener('input', () => { const st = card.querySelector('.st'); if (st) st.textContent = `On · ${sl.value}%`; card.style.setProperty('--glow', `rgba(${getComputedStyle(card).getPropertyValue('--c')},${(0.14 + 0.36 * sl.value / 100).toFixed(3)})`); });
+}
 
 /* the colour wheel popup (hold a light tile) */
 function openLightPopup(c) {

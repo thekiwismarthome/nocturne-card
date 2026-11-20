@@ -44,12 +44,13 @@ function resolvePlayer(c) {
   return { id: pin, why: 'pinned' };
 }
 kind({
-  id: 'media', name: 'Media player', domains: ['media_player'], icon: 'speaker', grid: { columns: 12, rows: 3 }, tap: { action: 'more-info' }, hold: { action: 'more-info' },
+  id: 'media', name: 'Media player', domains: ['media_player'], icon: 'speaker', grid: { columns: 12, rows: 3 }, tap: { action: 'none' }, hold: { action: 'none' },
   opts: [{ k: 'variant', l: 'Layout', t: 'seg', o: [['compact', 'Compact tile'], ['full', 'Full player']], d: 'compact' }, { k: 'volume', l: 'Volume slider', t: 'sw', d: true }, { k: 'shuffle', l: 'Shuffle and repeat (full player)', t: 'sw', d: true }, { k: 'spin', l: 'Spin the cover while playing (full player)', t: 'sw', d: false },
+    { k: 'icon_artwork', l: 'Show the artwork in the top-left button', t: 'sw', d: false }, { k: 'icon_spin', l: 'Rotate that artwork while playing', t: 'sw', d: true },
     { k: 'artwork', l: 'Artwork as background', t: 'seg', o: [['off', 'Off'], ['sharp', 'Sharp'], ['soft', 'Soft'], ['blurred', 'Blurred']], d: 'off' },
     { k: 'players', l: 'Players this card can offer', t: 'entity', domains: ['media_player'], multi: true }, { k: 'pinned_player', l: 'Pinned player', t: 'entity', domains: ['media_player'] },
     { k: 'start', l: 'Start on', t: 'seg', o: [['local', 'This device'], ['pinned', 'Pinned player'], ['last', 'Last used']], d: 'local' }],
-  gridFor: c => c.o.variant === 'full' && customElements.get('nocturne-music-card') ? { columns: 6, rows: 11 } : { columns: 12, rows: 3 },
+  gridFor: c => c.o.variant === 'full' && customElements.get('nocturne-music-card') ? { columns: 12, rows: 11 } : { columns: 12, rows: 3 },
   extraIds: c => (c.o.players || []).concat(c.o.pinned_player),
   sig: c => c._device || '',
   connect(c) { if (c._deviceAsked) return; c._deviceAsked = true; try { const ks = window.kioskSatellite; const r = ks && ks.getDeviceInfo && ks.getDeviceInfo(); Promise.resolve(r).then(i => { const n = i && (i.name || i.deviceName); if (n) { c._device = n; c._update(true); } }).catch(() => {}); } catch (_) {} },
@@ -59,7 +60,8 @@ kind({
     const play = s && s.state === 'playing', on = s && !['off', 'unavailable'].includes(s.state);
     const label = a.media_title ? `${esc(a.media_title)}${a.media_artist ? ' · ' + esc(a.media_artist) : ''}` : esc(nice(s ? s.state : 'unavailable'));
     const T = (svc, ic, col) => round(ic, 'media_player.' + svc, { entity_id: id }, col);
-    return bcard(c, { name: c.cfg.name || (s ? c.fname(id) : c.title), icon: c.cfg.icon || a.icon || c.k.icon, iconColor: play ? 'var(--accent-color)' : undefined, label, tog: tgl(on, 'toggle', id), rows: 3, wide: true, image: undefined, areas: "'i tr tog' 'n n n' 'l l l' 'ctl ctl ctl'", cols: 'auto 1fr auto',
+    const pic = a.entity_picture, art = o.icon_artwork && pic ? `<div style="width:100%;height:100%;border-radius:50%;background:url('${esc(c.url(pic))}') center/cover;animation:ncspin 12s linear infinite;animation-play-state:${play && o.icon_spin ? 'running' : 'paused'}"></div>` : '';
+    return bcard(c, { name: c.cfg.name || (s ? c.fname(id) : c.title), icon: c.cfg.icon || a.icon || c.k.icon, iconHtml: art, iconColor: play ? 'var(--accent-color)' : undefined, label, tog: tgl(on, 'toggle', id), rows: 3, wide: true, image: undefined, areas: "'i tr tog' 'n n n' 'l l l' 'ctl ctl ctl'", cols: 'auto 1fr auto',
       fields: { tr: `<div style="display:flex;gap:6px">${T('media_previous_track', 'skip-previous')}${T('media_play_pause', play ? 'pause' : 'play', 'var(--accent-color)')}${T('media_next_track', 'skip-next')}</div>` }, fieldCss: { tr: 'justify-self:center;align-self:center;' },
       ctl: o.volume ? `<div class="ncmslider">${slider('media_player.volume_set', { entity_id: id }, 'volume_level', Math.round((a.volume_level || 0) * 100), { min: 0, scale: 0.01, label: 'Volume' })}</div>` : '' }).replace('<div class="grid"', `${artLayer(c, id)}<div class="grid"`);
   },

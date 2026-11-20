@@ -5,7 +5,7 @@
 
 One Home Assistant card for every glass tile on a dashboard. You pick a **kind** (light, climate, media player, weather, person ...), pick an **entity of that kind**, and set the options. The entity picker only offers entities of the right domain, so a Light card only lists `light.*`.
 
-> **Beta.** This is `0.1.0-beta.1`. It works, but expect rough edges, and options may be renamed before 1.0. Please [open an issue](https://github.com/thekiwismarthome/nocturne-card/issues) if something looks wrong.
+> **Beta.** This is `0.1.0-beta.2`. It works, but expect rough edges, and options may be renamed before 1.0. Please [open an issue](https://github.com/thekiwismarthome/nocturne-card/issues) if something looks wrong.
 
 ![Tiles](docs/preview-tiles.png)
 ![Cards](docs/preview-cards.png)
@@ -42,7 +42,7 @@ entity: light.lounge
 
 | Kind | Entities | What you get |
 | --- | --- | --- |
-| `light` | `light.*` | Tile with toggle and brightness slider. **Hold** opens a colour wheel popup (colour lights) or brightness popup. |
+| `light` | `light.*` | Tile with toggle and brightness slider. **Hold** opens a colour wheel popup. `variant: wheel` is a full colour wheel card (`layout: tall` or `wide`). |
 | `switch` | `switch.*`, `input_boolean.*`, `valve.*`, `automation.*`, `script.*` | Toggle tile with an accent colour (`accent`, `water`, `air`, `warm`). |
 | `fan` | `fan.*` | Icon spins while running, faster at higher speed. Smooth or 3-step speed slider. |
 | `cover` | `cover.*` | Open, stop and close buttons, and a position slider if the device supports it. |
@@ -117,7 +117,11 @@ players:                         # which players this card may offer
 pinned_player: media_player.office_tablet
 start: local                     # local | pinned | last
 artwork: blurred                 # off | sharp | soft | blurred
+icon_artwork: true               # show the artwork in the top-left button
+icon_spin: true                  # ...and rotate it while playing
 ```
+
+Only the top-left button opens Home Assistant's more-info dialog. Tapping the body of the tile or anything in the full player does nothing extra.
 
 `start: local` starts on the player that belongs to the device showing the dashboard. It reads the device name from [Kiosk Satellite](https://github.com/jxlarrea/kiosk-satellite) (`kioskSatellite.getDeviceInfo().name`) and picks the player in `players` with the same name (for example a tablet called "Kitchen Tablet" matches `media_player.kitchen_tablet`). On any other browser it falls back to `pinned_player`.
 

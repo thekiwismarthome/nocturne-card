@@ -56,7 +56,7 @@ function bcard(c, p) {
   const grid = `grid-template-areas:${p.areas || "'i tog' 'n n' 'l l' 'ctl ctl'"};grid-template-columns:${p.cols || '1fr auto'};grid-template-rows:${p.trows || 'auto auto auto 1fr'};${p.gridCss || ''}`;
   let h = imgLayer(c, p.image);
   h += `<div class="grid" style="${grid}">`;
-  if (p.icon !== false) h += `<div class="imgcell" ${p.iconAct === false ? '' : `data-act="more-info"`} style="grid-area:i;${p.iconBg ? 'background:' + p.iconBg + ';' : ''}">${icn(p.icon || c.icon, 22, `color:${p.iconColor || 'var(--secondary-text-color)'};${p.iconFilter ? 'filter:' + p.iconFilter + ';' : ''}`)}</div>`;
+  if (p.icon !== false) h += `<div class="imgcell" ${p.iconAct === false ? '' : `data-act="more-info"`} style="grid-area:i;${p.iconBg ? 'background:' + p.iconBg + ';' : ''}">${p.iconHtml || icn(p.icon || c.icon, 22, `color:${p.iconColor || 'var(--secondary-text-color)'};${p.iconFilter ? 'filter:' + p.iconFilter + ';' : ''}`)}</div>`;
   if (p.tog) h += `<div class="f-tog" style="grid-area:tog;justify-self:end;align-self:start">${p.tog}</div>`;
   if (p.name !== false) h += `<div style="grid-area:n;justify-self:${p.center ? 'center' : 'start'};align-self:end;font-weight:600;font-size:${p.center ? 16 : 15}px;margin-top:${p.center ? 0 : 14}px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name ?? c.title)}</div>`;
   if (p.label) h += `<div style="grid-area:l;justify-self:${p.center ? 'center' : 'start'};font-size:12.5px;color:${p.labelColor || 'var(--secondary-text-color)'};max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.label}</div>`;
@@ -150,16 +150,16 @@ class NocturneCard extends HTMLElement {
       if (t) { ev.stopPropagation(); const [d, s] = t.dataset.svc.split('.'); this.call(d, s, JSON.parse(t.dataset.d || '{}')); t.classList.add('fired'); setTimeout(() => t.classList.remove('fired'), 700); return; }
       const a = ev.target.closest('[data-act]');
       if (a) { ev.stopPropagation(); this._act(a.dataset.act, a.dataset.e || this.e, a); return; }
-      if (ev.target.closest('input,select,textarea,a')) return;
+      if (ev.target.closest('input,select,textarea,a,.mc,.pad')) return;
       if (this._held) { this._held = false; return; }
-      this._action(this.cfg.tap_action || this.k.tap || { action: 'more-info' });
+      this._action(this.cfg.tap_action || (this.k.tapFor ? this.k.tapFor(this) : this.k.tap) || { action: 'more-info' });
     });
     r.addEventListener('keydown', ev => { if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches('[role=button],[role=switch]')) { ev.preventDefault(); ev.target.click(); } });
     r.addEventListener('input', ev => { const i = ev.target; if (!i.matches || !i.matches('input.sl')) return; this._busy = true; i.style.setProperty('--p', ((i.value - i.min) / (i.max - i.min)) * 100 + '%'); const lab = i.closest('.nc,.bc'); if (lab) lab.style.setProperty('--lv', i.value + '%'); });
     r.addEventListener('change', ev => { const i = ev.target; if (!i.matches || !i.matches('input.sl[data-sl]')) return; const [d, s] = i.dataset.sl.split('.'); const data = JSON.parse(i.dataset.d || '{}'); data[i.dataset.key] = Math.round(parseFloat(i.value) * parseFloat(i.dataset.scale || 1) * 100) / 100; this.call(d, s, data); this._busy = false; setTimeout(() => this._dirty && this._update(true), 400); });
     r.addEventListener('pointerup', () => { if (this._busy) { this._busy = false; setTimeout(() => this._dirty && this._update(true), 400); } });
     let timer;
-    r.addEventListener('pointerdown', ev => { if (ev.target.closest('input,select,button,[data-svc]')) return; const hold = this.cfg.hold_action || this.k.hold; if (!hold || hold.action === 'none') return; timer = setTimeout(() => { this._held = true; this._action(hold); }, 500); });
+    r.addEventListener('pointerdown', ev => { if (ev.target.closest('input,select,button,[data-svc],.mc,.pad')) return; const hold = this.cfg.hold_action || (this.k.holdFor ? this.k.holdFor(this) : this.k.hold); if (!hold || hold.action === 'none') return; timer = setTimeout(() => { this._held = true; this._action(hold); }, 500); });
     ['pointerup', 'pointerleave', 'pointercancel', 'scroll'].forEach(n => r.addEventListener(n, () => clearTimeout(timer)));
   }
   _act(a, id, el) {

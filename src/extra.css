@@ -27,3 +27,33 @@ button { font-family: inherit; }
 ha-icon { display: inline-flex; }
 .ncchip { min-width: 0; max-width: 100%; } .ncchip .cl { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cam .view { background: linear-gradient(160deg, #1a2342, #0b1020); } .cam .view::before, .cam .view::after { display: none; }
+.bc .imgcell { overflow: hidden; }
+
+/* colour wheel card */
+.lc { --c: 255,170,60; --glow: rgba(255,170,60,.4); --p: .7; position: relative; width: 100%; height: 100%; min-height: calc(var(--rows, 7) * 64px - 8px); padding: 18px; display: grid; gap: 18px; align-content: start; border-radius: 28px; background: var(--n-card-bg); box-shadow: var(--n-card-shadow); backdrop-filter: var(--n-blur); -webkit-backdrop-filter: var(--n-blur); overflow: hidden; color: var(--primary-text-color); font-family: var(--ha-font-family-body, Manrope, system-ui, sans-serif); text-align: left; }
+.lc::before { content: ""; position: absolute; inset: 0; background: radial-gradient(85% 62% at 50% 40%, var(--glow), transparent 72%); opacity: 0; transition: opacity .4s; pointer-events: none; }
+.lc.on::before { opacity: 1; }
+.lc > * { position: relative; min-width: 0; }
+.lc > .imglayer { position: absolute; }
+.lc.wide { grid-template-columns: auto 1fr; grid-template-areas: "wheel hd" "wheel ctl"; gap: 18px 28px; align-items: start; }
+.lc.wide .hd { grid-area: hd; } .lc.wide .wheel { grid-area: wheel; } .lc.wide .ctl { grid-area: ctl; align-self: end; }
+@media (max-width: 520px) { .lc.wide { grid-template-columns: 1fr; grid-template-areas: "hd" "wheel" "ctl"; } }
+.lc .hd { display: flex; align-items: center; gap: 12px; }
+.lc .hd .t { flex: 1; min-width: 0; }
+.lc .nm { font-weight: 600; font-size: 16px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lc .st { color: var(--secondary-text-color); font-size: 13px; display: block; font-variant-numeric: tabular-nums; }
+.lc .disc { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--n-well); box-shadow: var(--n-inset); color: var(--n-dim); transition: all .3s; flex: none; cursor: pointer; }
+.lc.on .disc { background: var(--n-raised); box-shadow: var(--n-shadow-sm), 0 0 22px rgba(var(--c), .6); color: rgb(var(--c)); }
+.lc .nctog { --tog-a: rgb(var(--c)); --tog-g: rgba(var(--c), .6); --tog-p: rgb(var(--c)); }
+.lc .wheel { justify-self: center; position: relative; width: var(--w, 232px); height: var(--w, 232px); border-radius: 50%; padding: 12px; background: var(--n-raised); box-shadow: var(--n-shadow-sm), 0 14px 30px rgba(0,0,0,.3); }
+.lc .pad { position: relative; width: 100%; height: 100%; border-radius: 50%; touch-action: none; cursor: crosshair; outline-offset: 6px; }
+.lc .pad canvas { display: block; width: 100%; height: 100%; border-radius: 50%; transition: filter .4s; }
+.lc:not(.on) .pad canvas { filter: saturate(.15) brightness(.45); }
+.lc .pad::after { content: ""; position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 3px 10px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.14); pointer-events: none; }
+.lc .thumb { position: absolute; z-index: 1; width: 32px; height: 32px; margin: -16px 0 0 -16px; border-radius: 50%; background: rgb(var(--c)); border: 3px solid #fff; box-shadow: 0 3px 10px rgba(0,0,0,.5), 0 0 20px rgba(var(--c), .85); pointer-events: none; }
+.lc:not(.on) .thumb { opacity: .5; }
+.lc .ctl { display: grid; gap: 12px; }
+.lc .br { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; color: var(--secondary-text-color); }
+.lc .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.lc .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--n-well); box-shadow: var(--n-inset); font: 600 12.5px var(--ha-font-family-body, Manrope, system-ui, sans-serif); letter-spacing: 0; text-transform: none; color: var(--secondary-text-color); }
+.lc .chip i { width: 12px; height: 12px; border-radius: 50%; background: rgb(var(--c)); box-shadow: 0 0 8px rgba(var(--c), .8); }
