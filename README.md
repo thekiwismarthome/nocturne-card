@@ -5,7 +5,7 @@
 
 One Home Assistant card for every glass tile on a dashboard. You pick a **kind** (light, climate, media player, weather, person ...), pick an **entity of that kind**, and set the options. The entity picker only offers entities of the right domain, so a Light card only lists `light.*`.
 
-> **Beta.** This is `0.1.0-beta.3`. It works, but expect rough edges, and options may be renamed before 1.0. Please [open an issue](https://github.com/thekiwismarthome/nocturne-card/issues) if something looks wrong.
+> **Beta.** This is `0.1.0-beta.4`. It works, but expect rough edges, and options may be renamed before 1.0. Please [open an issue](https://github.com/thekiwismarthome/nocturne-card/issues) if something looks wrong.
 
 ![Tiles](docs/preview-tiles.png)
 ![Cards](docs/preview-cards.png)
@@ -125,6 +125,30 @@ shuffle: true                    # shuffle and repeat buttons on both layouts
 Only the top-left button opens Home Assistant's more-info dialog. Tapping the body of the tile or anything in the full player does nothing extra.
 
 `start: local` starts on the player that belongs to the device showing the dashboard. It reads the device name from [Kiosk Satellite](https://github.com/jxlarrea/kiosk-satellite) (`kioskSatellite.getDeviceInfo().name`) and picks the player in `players` with the same name (for example a tablet called "Kitchen Tablet" matches `media_player.kitchen_tablet`). On any other browser it falls back to `pinned_player`.
+
+### Switch style (light, switch and fan tiles)
+
+By default the tile has a small toggle in the top-right corner. Set `switch_style` for a big switch on the bottom edge of the tile instead:
+
+```yaml
+type: custom:nocturne-card
+kind: light
+entity: light.lounge
+switch_style: slot       # standard | slot | tab | overlap
+switch_gap: 6            # px, 0 to 20
+switch_softness: 40      # degrees, 0 to 50
+```
+
+| `switch_style` | Look |
+| --- | --- |
+| `standard` | The corner toggle (default). |
+| `slot` | The glass is cut away around the switch, with `switch_gap` px of space all round. |
+| `tab` | The glass grows a tab that wraps the lower half of the switch, with `switch_gap` px of margin. |
+| `overlap` | No cut. The switch straddles the edge. |
+
+![Slot, tab and overlap](docs/preview-switch.png)
+
+`switch_softness` is how far the glass flares where it meets the switch. It stops growing when the edge of the tile runs out of room, and on a narrow tile `switch_gap` is limited to about 12 px.
 
 ### Weather
 

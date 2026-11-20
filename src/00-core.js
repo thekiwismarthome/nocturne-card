@@ -68,9 +68,56 @@ function bcard(c, p) {
 /* the tinted glow a card gets for a state, e.g. green armed, amber unlocked, red triggered */
 const glow = (rgb, a1, a2) => rgb ? { bg: `radial-gradient(130% 100% at 0% 0%, rgba(${rgb},${a1}), rgba(${rgb},.05) 60%, transparent 85%), var(--n-card-bg)`, shadow: `var(--n-card-shadow), 0 0 40px rgba(${rgb},${a2})` } : {};
 
+/* ---------- Tuner switch: a big switch that sits on the bottom edge of the tile (light, switch, fan) ---------- */
+const SX_ON = c => ['slot', 'tab'].includes(c.switch_style);
+const SWITCH_OPTS = [
+  { k: 'switch_style', l: 'Switch style', t: 'seg', o: [['standard', 'Corner toggle'], ['slot', 'Slot'], ['tab', 'Tab'], ['overlap', 'Overlap']], d: 'standard', when: c => c.variant !== 'wheel' },
+  { k: 'switch_gap', l: 'Switch gap (slot) or wrap margin (tab)', t: 'range', min: 0, max: 20, u: 'px', d: 6, when: c => c.variant !== 'wheel' && SX_ON(c) },
+  { k: 'switch_softness', l: 'Corner softness where the glass meets the switch', t: 'range', min: 0, max: 50, u: '°', d: 40, when: c => c.variant !== 'wheel' && SX_ON(c) },
+];
+const SX = { R: 28, SW: 84, SH: 40 };
+/* the tile outline for the Tuner switch. slot: the glass is cut away around the switch. tab: the glass grows around it. overlap: no cut. */
+function sxShape(W, B, mode, g, ph) {
+  const { R, SW, SH } = SX, L = (SW - SH) / 2, CX = W / 2, f = n => Math.round(n * 100) / 100;
+  const head = `M${R},0 H${W - R} A${R},${R} 0 0 1 ${W},${R} V${B - R} A${R},${R} 0 0 1 ${W - R},${B}`;
+  const tail = ` H${R} A${R},${R} 0 0 1 0,${B - R} V${R} A${R},${R} 0 0 1 ${R},0 Z`;
+  if (mode === 'overlap') return head + tail;
+  const tab = mode === 'tab', r = SH / 2 + g, sg = tab ? 1 : -1, sweep = tab ? 1 : 0;
+  const k = (CX - R - L - 2) / r, phiMax = Math.max(0, 2 * (Math.atan(k) - Math.PI / 4)), phi = Math.min(ph, phiMax), c = Math.cos(phi), s = Math.sin(phi), t = Math.tan(phi);
+  const rx = CX + L, lx = CX - L, Cr = rx + r / c, Ar = Cr + r * t, Pry = B + sg * r * s, Cl = lx - r / c, Al = Cl - r * t;
+  return head + ` H${f(Ar)} Q${f(Cr)},${B} ${f(rx + r * c)},${f(Pry)} A${r},${r} 0 0 ${sweep} ${rx},${B + sg * r} H${lx} A${r},${r} 0 0 ${sweep} ${f(lx - r * c)},${f(Pry)} Q${f(Cl)},${B} ${f(Al)},${B}` + tail;
+}
+function sxTile(c, p) {
+  const o = c.o, mode = o.switch_style, wide = o.size === 'wide', gid = 'sxg' + c._id, g = SX_ON(o) ? clamp(+o.switch_gap || 0, 0, 20) : 0, tab = mode === 'tab';
+  const pb = 46 + (mode === 'overlap' ? 0 : g);
+  const grad = (id, a, b, d) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="${a}"/><stop offset=".5" stop-color="${p.on ? 'var(--lc)' : '#fff'}" stop-opacity="${b}"/><stop offset="1" stop-color="${p.on ? 'var(--lc)' : '#fff'}" stop-opacity="${d}"/></linearGradient>`;
+  return `<div class="nc sx ${p.cls || ''} ${wide ? 'wide' : ''} ${p.on ? 'on' : ''}" style="--rows:3;--b:calc(100% - ${SX.SH / 2 + (tab ? g : 0)}px);${p.style || ''}">
+    <div class="shape">${imgLayer(c)}</div>
+    <svg class="edge" aria-hidden="true"><defs>${p.on ? grad(gid, .6, .3, .65) : grad(gid, .55, .16, .22)}</defs><path class="o" stroke="url(#${gid})"/></svg>
+    <div class="face" style="padding-bottom:${pb}px"><span class="ic ${p.lit ? 'lit' : ''}" data-act="toggle" role="button" tabindex="0" aria-label="Toggle">${icn(c.icon)}</span><div class="nm"><b>${esc(c.title)}</b>${p.sub ? `<span>${p.sub}</span>` : ''}</div>${p.slider ? `<div class="slw">${p.slider}</div>` : ''}</div>
+    <button class="sw" data-act="toggle" role="switch" aria-checked="${!!p.on}" aria-label="Toggle ${esc(c.title)}"></button></div>`;
+}
+/* sets the outline once the tile has a real size, and again when it changes */
+function sxAfter(c, root) {
+  const el = root.querySelector('.sx'); if (!el) return;
+  if (c._ro) c._ro.disconnect();
+  const o = c.o, mode = o.switch_style, apply = () => {
+    const W = el.clientWidth, H = el.clientHeight; if (!W || !H) return;
+    const { R, SW, SH } = SX, gmax = Math.max(0, Math.floor(W / 2 - R - (SW - SH) / 2 - SH / 2 - 1));
+    const g = SX_ON(o) ? clamp(+o.switch_gap || 0, 0, gmax) : 0, B = H - SH / 2 - (mode === 'tab' ? g : 0);
+    const d = sxShape(W, B, mode, g, (+o.switch_softness || 0) * Math.PI / 180);
+    const url = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${W} ${H}'><path d='${d}' fill='black'/></svg>`)}")`, sh = el.querySelector('.shape');
+    sh.style.webkitMaskImage = url; sh.style.maskImage = url;
+    const sv = el.querySelector('.edge'); sv.setAttribute('viewBox', `0 0 ${W} ${H}`); sv.querySelector('.o').setAttribute('d', d);
+    el.style.setProperty('--b', B + 'px');
+  };
+  apply(); if (typeof ResizeObserver !== 'undefined') { c._ro = new ResizeObserver(apply); c._ro.observe(el); }
+}
+
 /* hand-built tile (light, switch, fan, cover, sensor, ...) */
 function tile(c, p) {
   const o = c.o, wide = o.size === 'wide';
+  if (p.tog !== false && o.switch_style && o.switch_style !== 'standard') return sxTile(c, p);
   return `<div class="nc tile ${p.cls || ''} ${wide ? 'wide' : ''} ${p.on ? 'on' : ''}" style="--rows:3;${p.style || ''}">${imgLayer(c)}<div class="in"><span class="ic ${p.lit ? 'lit' : ''}" data-act="toggle" role="button" tabindex="0" aria-label="Toggle">${icn(c.icon)}</span>${p.tog === false ? '' : `<span class="tgw">${tgl(p.on)}</span>`}<div class="nm"><b>${esc(c.title)}</b>${p.sub ? `<span>${p.sub}</span>` : ''}</div>${p.slider ? `<div class="slw">${p.slider}</div>` : ''}</div></div>`;
 }
 
@@ -99,7 +146,7 @@ class NocturneCard extends HTMLElement {
   set hass(h) { const first = !this._hass; this._hass = h; if (this.k) this._update(first); }
   connectedCallback() { if (this.k && this._hass) { if (this.k.connect) this.k.connect(this); this._update(true); } }
   disconnectedCallback() { this._unsub(); }
-  _unsub() { this._subs.forEach(p => Promise.resolve(p).then(u => typeof u === 'function' && u()).catch(() => {})); this._subs = []; }
+  _unsub() { if (this._ro) this._ro.disconnect(); this._subs.forEach(p => Promise.resolve(p).then(u => typeof u === 'function' && u()).catch(() => {})); this._subs = []; }
 
   /* which entities does this card depend on? every entity id found in the config, plus whatever the kind adds */
   _entityIds() {

@@ -57,3 +57,24 @@ ha-icon { display: inline-flex; }
 .lc .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .lc .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--n-well); box-shadow: var(--n-inset); font: 600 12.5px var(--ha-font-family-body, Manrope, system-ui, sans-serif); letter-spacing: 0; text-transform: none; color: var(--secondary-text-color); }
 .lc .chip i { width: 12px; height: 12px; border-radius: 50%; background: rgb(var(--c)); box-shadow: 0 0 8px rgba(var(--c), .8); }
+
+/* Tuner switch (switch_style: slot | tab | overlap): glass tile with a big switch on its bottom edge */
+.nc.sx { background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding: 0; overflow: visible; --b: calc(100% - 20px); }
+.nc.sx::before { display: none; }
+.sx .shape { position: absolute; inset: 0; background: var(--n-sheen), var(--n-card-bg); -webkit-backdrop-filter: var(--n-blur); backdrop-filter: var(--n-blur); -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; overflow: hidden; }
+.sx .shape .imglayer { border-radius: 0; }
+.sx .shape::after { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .4s; pointer-events: none; background: radial-gradient(90% 80% at 50% var(--b), color-mix(in srgb, var(--lc) 45%, transparent), transparent 70%); }
+.nc.sx.on .shape { background: var(--n-sheen), linear-gradient(160deg, color-mix(in srgb, var(--lc) calc(var(--lv, 80%) * .3), rgba(255,255,255,.12)), rgba(255,255,255,.04)); }
+.sx.on .shape::after { opacity: 1; }
+.sx .edge { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 1; }
+.sx .edge .o { fill: none; stroke-width: 1.4; }
+.sx .face { position: absolute; inset: 0; z-index: 2; padding: 14px 14px 46px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; min-height: 0; pointer-events: none; }
+.sx .face > * { pointer-events: auto; }
+.sx .face .ic { flex: none; width: 40px; height: 40px; }
+.sx .face .nm { align-self: stretch; min-width: 0; }
+.sx .face .slw { align-self: stretch; margin-top: auto; }
+.sx .sw { position: absolute; z-index: 3; left: 50%; top: calc(var(--b) - 20px); margin-left: -42px; width: 84px; height: 40px; padding: 0; border: 0; border-radius: 999px; cursor: pointer; background: var(--n-well); -webkit-backdrop-filter: var(--n-blur); backdrop-filter: var(--n-blur); box-shadow: var(--n-inset-lg), 0 10px 22px rgba(0,0,0,.35); transition: background .3s, box-shadow .3s; }
+.sx .sw::after { content: ""; position: absolute; top: 4px; left: 4px; width: 32px; height: 32px; border-radius: 50%; background: var(--n-knob); box-shadow: 0 2px 6px rgba(0,0,0,.4); transition: transform .3s cubic-bezier(.3,1.4,.5,1), background .3s; }
+.sx.on .sw { background: linear-gradient(135deg, var(--lc), color-mix(in srgb, var(--lc) 60%, #ff7a2a)); box-shadow: inset 0 1px 3px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.35), 0 0 26px color-mix(in srgb, var(--lc) 70%, transparent), 0 10px 22px rgba(0,0,0,.3); }
+.sx.on .sw::after { transform: translateX(44px); background: #fff; }
+.sx .sw:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 3px; }

@@ -12,7 +12,8 @@ class NocturneCardEditor extends HTMLElement {
       if (o.t === 'entity') return { name: n, selector: { entity: { domain: o.domains, multiple: !!o.multi } } };
       return { name: n, selector: { text: {} } };
     };
-    return { main: k.opts.filter(o => !o.g).map(sel), image: k.opts.filter(o => o.g === 'image').map(sel) };
+    const on = o => !o.when || o.when(this._config || {});
+    return { main: k.opts.filter(o => !o.g && on(o)).map(sel), image: k.opts.filter(o => o.g === 'image').map(sel) };
   }
   _schema() {
     const k = KINDS[this._config.kind], kinds = Object.values(KINDS).map(x => ({ value: x.id, label: x.name }));
