@@ -1,0 +1,6 @@
+{
+  "name": "Nocturne Card",
+  "render_readme": true,
+  "filename": "nocturne-card.js",
+  "homeassistant": "2024.8.0"
+}

@@ -1,0 +1,156 @@
+# Nocturne Card
+
+[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=thekiwismarthome&repository=nocturne-card&category=plugin)
+[![GitHub release](https://img.shields.io/github/v/release/thekiwismarthome/nocturne-card?include_prereleases)](https://github.com/thekiwismarthome/nocturne-card/releases)
+
+One Home Assistant card for every glass tile on a dashboard. You pick a **kind** (light, climate, media player, weather, person ...), pick an **entity of that kind**, and set the options. The entity picker only offers entities of the right domain, so a Light card only lists `light.*`.
+
+> **Beta.** This is `0.1.0-beta.1`. It works, but expect rough edges, and options may be renamed before 1.0. Please [open an issue](https://github.com/thekiwismarthome/nocturne-card/issues) if something looks wrong.
+
+![Tiles](docs/preview-tiles.png)
+![Cards](docs/preview-cards.png)
+
+It is designed for the Nocturne glass themes, but it falls back to your theme's colours, so it still looks fine on any other theme.
+
+## Install
+
+### With HACS (easiest)
+
+1. Click the button at the top of this page, or in HACS open **⋮ → Custom repositories**, paste `https://github.com/thekiwismarthome/nocturne-card` and choose the type **Dashboard**.
+2. Search for **Nocturne Card**, open it and switch on **Show beta versions** (the first releases are pre-releases).
+3. Press **Download**, then reload the page (**Ctrl+Shift+R**).
+
+HACS adds the dashboard resource for you.
+
+### By hand
+
+1. Download `nocturne-card.js` from the [latest release](https://github.com/thekiwismarthome/nocturne-card/releases) into `config/www/`.
+2. **Settings → Dashboards → ⋮ → Resources → Add resource**: URL `/local/nocturne-card.js`, type **JavaScript module**.
+3. Hard-refresh the browser.
+
+## Add a card
+
+In the dashboard editor choose **Add card → Nocturne Card**. Pick the **Card kind** first, then the entity. Or use YAML:
+
+```yaml
+type: custom:nocturne-card
+kind: light
+entity: light.lounge
+```
+
+## Kinds
+
+| Kind | Entities | What you get |
+| --- | --- | --- |
+| `light` | `light.*` | Tile with toggle and brightness slider. **Hold** opens a colour wheel popup (colour lights) or brightness popup. |
+| `switch` | `switch.*`, `input_boolean.*`, `valve.*`, `automation.*`, `script.*` | Toggle tile with an accent colour (`accent`, `water`, `air`, `warm`). |
+| `fan` | `fan.*` | Icon spins while running, faster at higher speed. Smooth or 3-step speed slider. |
+| `cover` | `cover.*` | Open, stop and close buttons, and a position slider if the device supports it. |
+| `sensor` | `sensor.*`, `binary_sensor.*`, `input_number.*`, `number.*` | Big temperature with a secondary humidity bar, or a plain value tile. |
+| `climate` | `climate.*` | The glass dial with mode and fan menus, +/- and power. `variant: compact` is the small tile. |
+| `media` | `media_player.*` | Compact tile with transport and volume. `variant: full` shows a full music player if the separate `nocturne-music-card` resource is installed. See below. |
+| `alarm` | `alarm_control_panel.*` | Glows green, amber or red with the alarm state. Optional chips for a lock, door, presence sensor and camera, and arm/disarm buttons. |
+| `lock` | `lock.*` | Green when locked, amber when unlocked, with the battery in the label. |
+| `vacuum` | `vacuum.*` | Battery ring, status pill, bin state, Start / Pause / Dock. |
+| `vehicle` | `sensor.*` (the battery) | Battery ring and bar, range, locked and charging, from extra entities you choose. |
+| `plants` | `plant.*` (several) | One row per plant, green when OK, amber when it needs attention. |
+| `appliance` | `sensor.*` (several) | Time-remaining sensors for a washer, dryer, dishwasher and so on. |
+| `safety` | `binary_sensor.*` (several) | One dot per smoke alarm. The whole card pulses red if any detects smoke. |
+| `weather` | `weather.*` | Panels: `hero` (now and today), `hourly`, `daily`, `details`. |
+| `camera` | `camera.*` | A still image with a Live badge; tap opens the stream. |
+| `person` | `person.*` | One person: avatar with a presence or phone-battery ring, where they are, distance from home. Layouts `portrait`, `wide`, `photo`. |
+| `family` | `person.*`, `device_tracker.*` (several) | A row of avatars and "2 of 4 home". |
+| `actions` | `scene.*`, `script.*`, `button.*` (several) | A grid of round buttons. |
+
+Multi-entity kinds take `entities:` (a list). Entries can be a plain entity id or an object with a name and icon:
+
+```yaml
+type: custom:nocturne-card
+kind: appliance
+name: Laundry
+entities:
+  - entity: sensor.washing_machine_time_remaining
+    name: Washer
+  - entity: sensor.dryer_time_remaining
+    name: Dryer
+```
+
+### Options every card has
+
+| Option | What it does |
+| --- | --- |
+| `name`, `icon` | Override the name and the `mdi:` icon. |
+| `tap_action`, `hold_action` | Standard Home Assistant actions: `toggle`, `more-info`, `navigate`, `perform-action`, `url`, `none`. Lights also support `popup`. |
+| `image` | A background image URL, for example `/local/robot.png`. |
+| `image_opacity` | 0 to 100. |
+| `image_fit` | `cover`, `contain` or `width` (uses `image_width`, in %). |
+| `image_position` | `center`, `right-bottom`, `left-bottom`, `right-top`, `top`. |
+| `image_blur` | Blur in px. |
+| `image_fade` | Darken the image so the text stays readable. |
+
+The visual editor lists every option for the chosen kind. The YAML view shows only the ones you changed.
+
+### Person card
+
+```yaml
+type: custom:nocturne-card
+kind: person
+entity: person.alex
+layout: portrait        # portrait | wide | photo
+avatar: photo           # photo | initials | icon
+ring: presence          # presence | battery | none
+accent: auto            # a colour of their own, or accent | water | warm | good
+color: "#ff7ab8"        # optional: any CSS colour
+```
+
+The phone battery is found from the person's tracker (`sensor.<tracker>_battery_level`). If your sensor is named differently, set `battery_entity`. Distance from home is worked out from the person's location and `zone.home`. For a street address when they are away, set `geocoded_entity` to a geocoded-location sensor.
+
+### Media player
+
+```yaml
+type: custom:nocturne-card
+kind: media
+entity: media_player.kitchen_tablet
+players:                         # which players this card may offer
+  - media_player.kitchen_tablet
+  - media_player.office_tablet
+pinned_player: media_player.office_tablet
+start: local                     # local | pinned | last
+artwork: blurred                 # off | sharp | soft | blurred
+```
+
+`start: local` starts on the player that belongs to the device showing the dashboard. It reads the device name from [Kiosk Satellite](https://github.com/jxlarrea/kiosk-satellite) (`kioskSatellite.getDeviceInfo().name`) and picks the player in `players` with the same name (for example a tablet called "Kitchen Tablet" matches `media_player.kitchen_tablet`). On any other browser it falls back to `pinned_player`.
+
+### Weather
+
+```yaml
+type: custom:nocturne-card
+kind: weather
+entity: weather.home
+panel: hero                      # hero | hourly | daily | details
+```
+
+Forecasts come from Home Assistant's own weather forecast subscription, so any weather integration works. Rain radar, tides and weather warnings are not in the beta.
+
+## Themes
+
+The card reads the Nocturne glass tokens (`--nc-raised`, `--nc-well`, `--nc-ok` and friends) from your theme when they exist, and uses built-in glass defaults when they do not.
+
+## Known limits in this beta
+
+- The visual editor is built from Home Assistant's own form controls and has only been tested lightly.
+- Weather has four panels. The radar map, tides and warnings from the original dashboard are not included.
+- Media `variant: full` needs the separate `nocturne-music-card` resource, which is not published yet. Without it the card shows the compact tile.
+- Layouts are tuned for the sections dashboard. Masonry works but heights are approximate.
+
+## Development
+
+```bash
+npm run build     # joins src/*.js and the CSS into nocturne-card.js (no dependencies)
+```
+
+The built `nocturne-card.js` in the repository root is what HACS installs. After a change, run the build and commit both `src/` and `nocturne-card.js`.
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
