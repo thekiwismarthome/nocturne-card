@@ -3,7 +3,8 @@ const CLIMATE_RGB = { heat: '255,110,60', cool: '50,165,255', dry: '40,210,160',
 const rndBtn = (icon, onclick, color) => `<button class="ncround" aria-label="${icon}" style="${color ? 'color:' + color : ''}" onclick="${onclick}">${icn(icon, 19)}</button>`;
 kind({
   id: 'climate', name: 'Climate', domains: ['climate'], icon: 'thermostat', grid: { columns: 12, rows: 5 }, tap: { action: 'none' }, hold: { action: 'more-info' },
-  opts: [{ k: 'variant', l: 'Layout', t: 'seg', o: [['dial', 'Dial'], ['compact', 'Compact']], d: 'dial' }, { k: 'side', l: 'Mode, fan, indoor and humidity column', t: 'sw', d: true }, { k: 'dial_size', l: 'Dial size', t: 'range', min: 140, max: 210, u: 'px', d: 210 }, { k: 'step', l: 'Temperature step', t: 'seg', o: [['0.5', '0.5°'], ['1', '1°']], d: '1' }],
+  opts: [{ k: 'variant', l: 'Layout', t: 'seg', o: [['dial', 'Dial'], ['compact', 'Compact']], d: 'dial' }, { k: 'side', l: 'Mode, fan, indoor and humidity column', t: 'sw', d: true }, { k: 'dial_size', l: 'Dial size', t: 'range', min: 140, max: 210, u: 'px', d: 210 }, { k: 'step', l: 'Temperature step', t: 'seg', o: [['0.5', '0.5°'], ['1', '1°']], d: '1' }, ...switchOpts(c => c.variant === 'compact')],
+  after(c, root) { sxAfter(c, root); },
   gridFor: c => c.o.variant === 'compact' ? { columns: 6, rows: 3 } : { columns: 12, rows: 5 },
   render(c) {
     const id = c.e, s = c.S(id); if (!s) return bcard(c, { name: c.title, label: 'Entity not found', rows: 3, wide: false });
@@ -11,8 +12,10 @@ kind({
     if (c.o.variant === 'compact') {
       const modes = ['auto', 'cool', 'heat'].filter(m => (a.hvac_modes || ['auto', 'cool', 'heat']).includes(m)), MI = { auto: ['thermostat-auto', '#6ee7a8'], cool: ['snowflake', '#5ac8fa'], heat: ['fire', '#ff9248'], dry: ['water-percent', '#22c997'] };
       const t = a.temperature, label = on ? `${s.state === 'heat' ? 'Heating to' : s.state === 'cool' ? 'Cooling to' : 'Set to'} ${t ?? '–'}°C` : `Off · ${a.current_temperature ?? '–'}°C indoors`;
+      const buttons = `<div class="ncgrid" style="grid-template-columns:repeat(${modes.length},1fr);justify-items:center">${modes.map(m => `<button class="ncround" style="${s.state === m ? `color:#fff;background:${MI[m][1]}` : ''}" aria-label="${m}" ${svcAttr(s.state === m ? 'climate.turn_off' : 'climate.set_hvac_mode', s.state === m ? { entity_id: id } : { entity_id: id, hvac_mode: m })}>${icn(MI[m][0], 19)}</button>`).join('')}</div>`;
+      if (c.o.switch_style && c.o.switch_style !== 'standard') return sxTile(c, { cls: 'cl', on, style: `--lc:${rgb ? `rgb(${rgb})` : 'var(--n-warm)'}`, face: `<div class="hd"><span class="ic ${on ? 'lit' : ''}" data-act="more-info" role="button" tabindex="0" aria-label="More info">${icn(c.icon)}</span><div class="nm"><b>${esc(c.title)}</b><span style="${on ? 'color:var(--n-ok)' : ''}">${label}</span></div></div><div class="slw" style="margin-top:auto">${buttons}</div>` });
       return bcard(c, { name: c.title, icon: c.icon, iconColor: on ? 'var(--accent-color)' : undefined, label, labelColor: on ? 'var(--n-ok)' : undefined, tog: tgl(on, 'toggle', id), rows: 3, wide: false, bg: g.bg, shadow: g.shadow,
-        ctl: `<div class="ncgrid" style="grid-template-columns:repeat(${modes.length},1fr);justify-items:center">${modes.map(m => `<button class="ncround" style="${s.state === m ? `color:#fff;background:${MI[m][1]}` : ''}" aria-label="${m}" ${svcAttr(s.state === m ? 'climate.turn_off' : 'climate.set_hvac_mode', s.state === m ? { entity_id: id } : { entity_id: id, hvac_mode: m })}>${icn(MI[m][0], 19)}</button>`).join('')}</div>` });
+        ctl: buttons });
     }
     const step = parseFloat(c.o.step), t = a.temperature ?? a.min_temp ?? 21, mn = a.min_temp ?? 16, mx = a.max_temp ?? 31, vars = { dial: +c.o.dial_size };
     const label = on ? `${({ heat: 'Heating to', cool: 'Cooling to', dry: 'Drying at', auto: 'Auto at', heat_cool: 'Auto at', fan_only: 'Fan at' })[s.state] || s.state} ${t}°C` : `Off · set to ${t}°C`;

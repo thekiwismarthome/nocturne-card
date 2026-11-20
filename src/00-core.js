@@ -70,11 +70,14 @@ const glow = (rgb, a1, a2) => rgb ? { bg: `radial-gradient(130% 100% at 0% 0%, r
 
 /* ---------- Tuner switch: a big switch that sits on the bottom edge of the tile (light, switch, fan) ---------- */
 const SX_ON = c => ['slot', 'tab'].includes(c.switch_style);
-const SWITCH_OPTS = [
-  { k: 'switch_style', l: 'Switch style', t: 'seg', o: [['standard', 'Corner toggle'], ['slot', 'Slot'], ['tab', 'Tab'], ['overlap', 'Overlap']], d: 'standard', when: c => c.variant !== 'wheel' },
-  { k: 'switch_gap', l: 'Switch gap (slot) or wrap margin (tab)', t: 'range', min: 0, max: 20, u: 'px', d: 6, when: c => c.variant !== 'wheel' && SX_ON(c) },
-  { k: 'switch_softness', l: 'Corner softness where the glass meets the switch', t: 'range', min: 0, max: 50, u: '°', d: 40, when: c => c.variant !== 'wheel' && SX_ON(c) },
+const SW_OPTS = [
+  { k: 'switch_style', l: 'Switch style', t: 'seg', o: [['standard', 'Corner toggle'], ['slot', 'Slot'], ['tab', 'Tab'], ['overlap', 'Overlap']], d: 'standard' },
+  { k: 'switch_gap', l: 'Switch gap (slot) or wrap margin (tab)', t: 'range', min: 0, max: 20, u: 'px', d: 6, tuner: true },
+  { k: 'switch_softness', l: 'Corner softness where the glass meets the switch', t: 'range', min: 0, max: 50, u: '°', d: 40, tuner: true },
 ];
+/* ok(cfg): does this config use a tile that has the switch? */
+const switchOpts = ok => SW_OPTS.map(o => ({ ...o, when: c => ok(c) && (!o.tuner || SX_ON(c)) }));
+const SWITCH_OPTS = switchOpts(c => c.variant !== 'wheel');
 const SX = { R: 28, SW: 84, SH: 40 };
 /* the tile outline for the Tuner switch. slot: the glass is cut away around the switch. tab: the glass grows around it. overlap: no cut. */
 function sxShape(W, B, mode, g, ph) {
@@ -94,7 +97,7 @@ function sxTile(c, p) {
   return `<div class="nc sx ${p.cls || ''} ${wide ? 'wide' : ''} ${p.on ? 'on' : ''}" style="--rows:3;--b:calc(100% - ${SX.SH / 2 + (tab ? g : 0)}px);${p.style || ''}">
     <div class="shape">${imgLayer(c)}</div>
     <svg class="edge" aria-hidden="true"><defs>${p.on ? grad(gid, .6, .3, .65) : grad(gid, .55, .16, .22)}</defs><path class="o" stroke="url(#${gid})"/></svg>
-    <div class="face" style="padding-bottom:${pb}px"><span class="ic ${p.lit ? 'lit' : ''}" data-act="toggle" role="button" tabindex="0" aria-label="Toggle">${icn(c.icon)}</span><div class="nm"><b>${esc(c.title)}</b>${p.sub ? `<span>${p.sub}</span>` : ''}</div>${p.slider ? `<div class="slw">${p.slider}</div>` : ''}</div>
+    <div class="face" style="padding-bottom:${pb}px">${p.face || `<span class="ic ${p.lit ? 'lit' : ''}" data-act="toggle" role="button" tabindex="0" aria-label="Toggle">${icn(c.icon)}</span><div class="nm"><b>${esc(c.title)}</b>${p.sub ? `<span>${p.sub}</span>` : ''}</div>${p.slider ? `<div class="slw">${p.slider}</div>` : ''}`}</div>
     <button class="sw" data-act="toggle" role="switch" aria-checked="${!!p.on}" aria-label="Toggle ${esc(c.title)}"></button></div>`;
 }
 /* sets the outline once the tile has a real size, and again when it changes */
