@@ -104,3 +104,52 @@ ha-icon { display: inline-flex; }
 
 /* narrow tiles (about 150px wide or less): drop the second line so the slider still clears the switch */
 .sx.sm .nm span { display: none; }
+
+/* clock */
+.clk { --lc: var(--accent-color); }
+.nc.clk.tint { background: radial-gradient(120% 90% at 12% 0%, color-mix(in srgb, var(--lc) 20%, transparent), transparent 62%), var(--n-card-bg); box-shadow: var(--n-card-shadow), 0 0 36px color-mix(in srgb, var(--lc) 14%, transparent); }
+.clk .cq { position: absolute; inset: 0; z-index: 2; padding: 16px; container-type: size; display: grid; min-width: 0; }
+.clk .tm { font: 300 clamp(30px, 29cqw, 90px)/1 var(--n-font-display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--primary-text-color); text-shadow: 0 0 22px color-mix(in srgb, var(--lc) 45%, transparent); }
+.clk .tm .co { font-style: normal; margin: 0 .02em; position: relative; top: -.04em; }
+.clk .tm .co.bl { animation: ncblink 1s steps(1) infinite; }
+.clk .tm small { font-size: .3em; letter-spacing: 0; margin-left: .25em; color: var(--secondary-text-color); font-weight: 500; text-shadow: none; }
+.clk .tm small.sc { color: var(--lc); }
+.clk .dt { font-size: 13px; font-weight: 500; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.clk .info { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; min-width: 0; }
+.clk .lbl { font: 700 11px var(--ha-font-family-body, Manrope, system-ui, sans-serif); letter-spacing: .12em; text-transform: uppercase; color: var(--secondary-text-color); }
+.clk .tz { font: 700 10.5px var(--ha-font-family-body, Manrope, system-ui, sans-serif); padding: 3px 8px; border-radius: 99px; background: var(--n-well); box-shadow: var(--n-inset); color: var(--secondary-text-color); }
+.clk .chs { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.pchip[hidden] { display: none; }
+.pchip.pz b { opacity: .6; }
+.clk .pchip b { font-variant-numeric: tabular-nums; }
+@keyframes ncblink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+.dg .cq { grid-template-rows: 1fr auto; justify-items: center; align-items: center; text-align: center; row-gap: 6px; }
+.dg .main { display: grid; justify-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+.dg.wide .cq { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 1fr; justify-items: start; text-align: left; column-gap: 16px; }
+.dg.wide .main { justify-items: start; }
+.dg.wide .tm { font-size: clamp(32px, 14cqw, 80px); }
+.dg.wide .info { flex-direction: column; align-items: flex-end; justify-content: center; }
+.dg.wide .chs { flex-direction: column; align-items: flex-end; }
+.an .cq { place-items: center; }
+.an .dial { height: min(100cqh, 100cqw); aspect-ratio: 1; }
+.an .dial svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.an.wide .cq { grid-template-columns: auto minmax(0, 1fr); gap: 20px; justify-items: start; }
+.an.wide .dial { height: 100cqh; }
+.an .side { display: grid; gap: 6px; min-width: 0; align-content: center; justify-items: start; }
+.an .side .tm { font-size: clamp(30px, 11cqw, 64px); }
+.an .side .info { justify-content: flex-start; }
+.an svg .face { fill: var(--n-well); stroke: rgba(255,255,255,.16); stroke-width: 1.2; }
+.an svg .ring { fill: none; stroke: var(--lc); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: .9; filter: drop-shadow(0 0 3px var(--lc)); transition: stroke-dashoffset .3s linear; }
+.an svg .mn { stroke: var(--n-dim); stroke-width: 1; stroke-linecap: round; }
+.an svg .mj { stroke: var(--primary-text-color); opacity: .85; stroke-width: 2.2; stroke-linecap: round; }
+.an svg .dot { fill: var(--primary-text-color); opacity: .5; } .an svg .dot.q { opacity: .95; }
+.an svg .nb { fill: var(--primary-text-color); font: 500 15px var(--n-font-display); text-anchor: middle; dominant-baseline: central; }
+.an svg .dw { fill: var(--secondary-text-color); font: 700 9.5px var(--ha-font-family-body, Manrope, system-ui, sans-serif); letter-spacing: .12em; text-anchor: middle; }
+.an svg .lb { fill: var(--secondary-text-color); font: 700 8px var(--ha-font-family-body, Manrope, system-ui, sans-serif); letter-spacing: .2em; text-anchor: middle; }
+.an svg .h { transform-origin: 100px 100px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
+.an svg .se { transition: transform .35s cubic-bezier(.3,1.6,.5,1); } .an.sm svg .se, .an.sm svg .ring { transition: none; }
+.an svg .hr line { stroke: var(--primary-text-color); stroke-width: 6; stroke-linecap: round; }
+.an svg .mi line { stroke: var(--primary-text-color); stroke-width: 3.6; stroke-linecap: round; }
+.an svg .se line { stroke: var(--lc); stroke-width: 1.6; stroke-linecap: round; } .an svg .se circle { fill: var(--lc); }
+.an svg .cap { fill: var(--n-c2); stroke: var(--lc); stroke-width: 2; }
+.clk.noanim * { transition: none !important; }

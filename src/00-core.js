@@ -162,7 +162,7 @@ class NocturneCard extends HTMLElement {
   set hass(h) { const first = !this._hass; this._hass = h; if (this.k) this._update(first); }
   connectedCallback() { if (this.k && this._hass) { if (this.k.connect) this.k.connect(this); this._update(true); } }
   disconnectedCallback() { this._unsub(); }
-  _unsub() { if (this._ro) this._ro.disconnect(); this._subs.forEach(p => Promise.resolve(p).then(u => typeof u === 'function' && u()).catch(() => {})); this._subs = []; }
+  _unsub() { if (this._ro) this._ro.disconnect(); this._subs.forEach(p => typeof p === 'function' ? p() : Promise.resolve(p).then(u => typeof u === 'function' && u()).catch(() => {})); this._subs = []; }
 
   /* which entities does this card depend on? every entity id found in the config, plus whatever the kind adds */
   _entityIds() {

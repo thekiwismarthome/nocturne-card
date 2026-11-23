@@ -56,6 +56,7 @@ entity: light.lounge
 | `safety` | `binary_sensor.*` (several) | One dot per smoke alarm. The whole card pulses red if any detects smoke. |
 | `weather` | `weather.*` | Panels: `hero` (now and today), `hourly`, `daily`, `details`. |
 | `camera` | `camera.*` | A still image with a Live badge; tap opens the stream. |
+| `clock` | none | A digital or analogue clock for any time zone, with a seconds ring, the date, a next-alarm chip and a timer countdown. See below. |
 | `person` | `person.*` | One person: avatar with a presence or phone-battery ring, where they are, distance from home. Layouts `portrait`, `wide`, `photo`. |
 | `family` | `person.*`, `device_tracker.*` (several) | A row of avatars and "2 of 4 home". |
 | `actions` | `scene.*`, `script.*`, `button.*` (several) | A grid of round buttons. |
@@ -165,6 +166,40 @@ square: false      # optional: the older, slightly taller tile
 ```
 
 Applies to the light, switch, fan, cover, sensor, lock, vacuum, vehicle, person (portrait and photo) and compact climate tiles. Wide tiles ignore it. A very narrow square tile has less room, so long names are cut short and the brightness slider sits closer to the switch.
+
+### Clock
+
+A clock needs no entity. Pick `variant: digital` or `variant: analog`.
+
+```yaml
+type: custom:nocturne-card
+kind: clock
+variant: analog          # digital | analog
+size: small              # small (square tile) | wide
+name: Home               # optional label
+timezone: Pacific/Auckland   # optional, empty uses yours
+hour_format: auto        # auto | 12 | 24 (auto follows your Home Assistant profile)
+show_seconds: true
+show_date: true
+tint: true               # warm by day, cool at night
+alarm_entity: sensor.phone_next_alarm
+timer_entity: timer.eggs
+```
+
+| Option | Face | What it does |
+| --- | --- | --- |
+| `show_seconds` | both | Small seconds after the digital time, or the second hand on the dial. |
+| `show_date` | both | The date. On a small analogue dial it sits under the centre. |
+| `blink` | digital | Blinking colon. |
+| `markers` | analog | `ticks`, `numbers` or `dots`. |
+| `ring` | analog | A glowing ring that fills once a minute. |
+| `smooth` | analog | A sweeping second hand instead of a ticking one. |
+| `tint` | both | Warm amber by day and cool violet at night, from `sun.sun`. A clock set to another `timezone` uses the hour there instead. |
+| `timezone` | both | Any IANA zone, for example `Europe/London`. The zone abbreviation shows on the tile. |
+| `alarm_entity` | digital, wide analogue | A sensor whose state is a date and time, for example the next alarm from the Companion app. Shows a chip such as "TUE 7:26 am". Hidden when there is no alarm. |
+| `timer_entity` | both | A `timer` entity. A chip counts down while it runs and dims when paused. On a small analogue dial the countdown replaces the date. |
+
+Use several clock cards with different `timezone` values for a world clock. The small clock is square by default like the other small tiles.
 
 ### Weather
 

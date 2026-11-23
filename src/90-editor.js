@@ -20,8 +20,8 @@ class NocturneCardEditor extends HTMLElement {
     const base = [{ name: 'kind', selector: { select: { mode: 'dropdown', options: kinds } } }];
     if (!k) return base;
     const f = this._fields(k), doms = k.domains;
-    base.push(k.multi ? { name: 'entities', selector: { entity: { domain: doms, multiple: true } } } : { name: 'entity', selector: { entity: { domain: doms } } });
-    base.push({ type: 'grid', name: '', schema: [{ name: 'name', selector: { text: {} } }, { name: 'icon', selector: { icon: {} } }] });
+    if (!k.noEntity) base.push(k.multi ? { name: 'entities', selector: { entity: { domain: doms, multiple: true } } } : { name: 'entity', selector: { entity: { domain: doms } } });
+    base.push({ type: 'grid', name: '', schema: [{ name: 'name', selector: { text: {} } }, ...(k.noIcon ? [] : [{ name: 'icon', selector: { icon: {} } }])] });
     if (f.main.length) base.push({ type: 'expandable', title: `${k.name} options`, expanded: true, flatten: true, schema: f.main });
     if (f.image.length) base.push({ type: 'expandable', title: 'Background image', flatten: true, schema: f.image });
     base.push({ type: 'expandable', title: 'Actions', flatten: true, schema: [{ name: 'tap_action', selector: { ui_action: {} } }, { name: 'hold_action', selector: { ui_action: {} } }] });
