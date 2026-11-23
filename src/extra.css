@@ -109,7 +109,7 @@ ha-icon { display: inline-flex; }
 .clk { --lc: var(--accent-color); }
 .nc.clk.tint { background: radial-gradient(120% 90% at 12% 0%, color-mix(in srgb, var(--lc) 20%, transparent), transparent 62%), var(--n-card-bg); box-shadow: var(--n-card-shadow), 0 0 36px color-mix(in srgb, var(--lc) 14%, transparent); }
 .clk .cq { position: absolute; inset: 0; z-index: 2; padding: 16px; container-type: size; display: grid; min-width: 0; }
-.clk .tm { font: 300 clamp(30px, 29cqw, 90px)/1 var(--n-font-display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--primary-text-color); text-shadow: 0 0 22px color-mix(in srgb, var(--lc) 45%, transparent); }
+.clk .tm { font: 300 clamp(28px, 25cqw, 90px)/1 var(--n-font-display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--primary-text-color); text-shadow: 0 0 22px color-mix(in srgb, var(--lc) 45%, transparent); }
 .clk .tm .co { font-style: normal; margin: 0 .02em; position: relative; top: -.04em; }
 .clk .tm .co.bl { animation: ncblink 1s steps(1) infinite; }
 .clk .tm small { font-size: .3em; letter-spacing: 0; margin-left: .25em; color: var(--secondary-text-color); font-weight: 500; text-shadow: none; }
