@@ -1,11 +1,9 @@
 # Nocturne Card
 
 [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=thekiwismarthome&repository=nocturne-card&category=plugin)
-[![GitHub release](https://img.shields.io/github/v/release/thekiwismarthome/nocturne-card?include_prereleases)](https://github.com/thekiwismarthome/nocturne-card/releases)
+[![GitHub release](https://img.shields.io/github/v/release/thekiwismarthome/nocturne-card)](https://github.com/thekiwismarthome/nocturne-card/releases)
 
 One Home Assistant card for every glass tile on a dashboard. You pick a **kind** (light, climate, media player, weather, person ...), pick an **entity of that kind**, and set the options. The entity picker only offers entities of the right domain, so a Light card only lists `light.*`.
-
-> **Beta.** This is `0.1.0-beta.8`. It works, but expect rough edges, and options may be renamed before 1.0. Please [open an issue](https://github.com/thekiwismarthome/nocturne-card/issues) if something looks wrong.
 
 ![Tiles](docs/preview-tiles.png)
 ![Cards](docs/preview-cards.png)
@@ -17,7 +15,7 @@ It is designed for the Nocturne glass themes, but it falls back to your theme's 
 ### With HACS (easiest)
 
 1. Click the button at the top of this page, or in HACS open **⋮ → Custom repositories**, paste `https://github.com/thekiwismarthome/nocturne-card` and choose the type **Dashboard**.
-2. Search for **Nocturne Card**, open it and switch on **Show beta versions** (the first releases are pre-releases).
+2. Search for **Nocturne Card** and open it.
 3. Press **Download**, then reload the page (**Ctrl+Shift+R**).
 
 HACS adds the dashboard resource for you.
@@ -179,13 +177,13 @@ panel: hero                      # hero | hourly | daily | details
 
 The `hero` panel has animated weather icons (spinning sun rays, drifting clouds, falling rain and snow, lightning, fog, wind) that switch to the moon at night using `sun.sun`, and the card is tinted by the condition. Optional `feels_entity` (a feels-like sensor) and `warnings_entity` (a sensor whose state is the number of active warnings) add the feels-like value and a warning chip.
 
-Forecasts come from Home Assistant's own weather forecast subscription, so any weather integration works. Rain radar, tides and weather warnings are not in the beta.
+Forecasts come from Home Assistant's own weather forecast subscription, so any weather integration works. Rain radar, tides and weather warnings are not included.
 
 ## Themes
 
 The card reads the Nocturne glass tokens (`--nc-raised`, `--nc-well`, `--nc-ok` and friends) from your theme when they exist, and uses built-in glass defaults when they do not.
 
-## Known limits in this beta
+## Known limits
 
 - The visual editor is built from Home Assistant's own form controls and has only been tested lightly.
 - Weather has four panels. The radar map, tides and warnings from the original dashboard are not included.
