@@ -61,6 +61,8 @@ ha-icon { display: inline-flex; }
 /* Tuner switch (switch_style: slot | tab | overlap): glass tile with a big switch on its bottom edge */
 .nc.sx { background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding: 0; overflow: visible; --b: calc(100% - 20px); }
 .nc.sx::before { display: none; }
+/* a lit tile paints its glow as a background on the whole box (.nc.on.lit), which showed as a shadow under the tile outline */
+.nc.sx.on, .nc.sx.lit, .nc.sx.on.lit { background: none; box-shadow: none; }
 .sx .shape { position: absolute; inset: 0; background: var(--n-sheen), var(--n-card-bg); -webkit-backdrop-filter: var(--n-blur); backdrop-filter: var(--n-blur); -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; overflow: hidden; }
 .sx .shape .imglayer { border-radius: 0; }
 .sx .shape::after { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .4s; pointer-events: none; background: radial-gradient(90% 80% at 50% var(--b), color-mix(in srgb, var(--lc) 45%, transparent), transparent 70%); }
