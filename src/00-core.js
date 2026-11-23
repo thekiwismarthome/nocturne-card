@@ -90,8 +90,8 @@ function sxGeom(o) {
 }
 /* the glass outline for the Tuner switch: the tile (a rounded rect) with the switch outline, g px bigger all round, cut out (slot) or added (tab),
    then softened by blurring and re-thresholding the alpha, which rounds every corner by about 1.9 x sigma. rim = only a thin inner ring, for the edge highlight. */
-function sxMask(W, H, B, mode, g, rad, x0, rim) {
-  const { R, SW, SH } = SX, sigma = Math.max(0.35, rad / 1.9), f = n => Math.round(n * 100) / 100;
+function sxMask(W, H, B, mode, g, rad, x0, rim, s) {
+  const { R } = SX, SW = SX.SW * s, SH = SX.SH * s, sigma = Math.max(0.35, rad / 1.9), f = n => Math.round(n * 100) / 100;
   const notch = fill => `<rect x='${f(x0 - g)}' y='${f(B - SH / 2 - g)}' width='${SW + 2 * g}' height='${SH + 2 * g}' rx='${SH / 2 + g}' fill='${fill}'/>`;
   const rg = `x='-40' y='-40' width='${W + 80}' height='${H + 80}'`;
   let defs = `<filter id='f' filterUnits='userSpaceOnUse' ${rg} color-interpolation-filters='sRGB'><feGaussianBlur stdDeviation='${f(sigma)}'/><feColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 12 -5.5'${rim ? " result='a'/><feMorphology in='a' operator='erode' radius='1.2' result='e'/><feComposite in='a' in2='e' operator='out'/>" : '/>'}</filter>`;
@@ -104,11 +104,11 @@ function sxMask(W, H, B, mode, g, rad, x0, rim) {
 }
 function sxTile(c, p) {
   const o = c.o, mode = o.switch_style, wide = o.size === 'wide', { g, t, lo, tab } = sxGeom(o);
-  const pb = 46 + (mode === 'overlap' ? 0 : g), al = t < 0.25 ? 'left' : t > 0.75 ? 'right' : 'center';
-  return `<div class="nc sx al-${al} ${p.cls || ''} ${wide ? 'wide' : ''} ${p.on ? 'on' : ''}" style="--rows:3;--t:${t};--lo:${lo}px;--b:calc(100% - ${SX.SH / 2 + (tab ? g : 0)}px);${p.style || ''}">
+  const al = t < 0.25 ? 'left' : t > 0.75 ? 'right' : 'center';
+  return `<div class="nc sx al-${al} ${p.cls || ''} ${wide ? 'wide' : ''} ${p.on ? 'on' : ''}" style="--rows:3;--t:${t};--lo:${lo}px;--g:${g}px;--b:calc(100% - ${SX.SH / 2 + (tab ? g : 0)}px);${p.style || ''}">
     <div class="shape">${imgLayer(c)}</div>
     <div class="rim" aria-hidden="true"></div>
-    <div class="face" style="padding-bottom:${pb}px">${p.face || `<span class="ic ${p.lit ? 'lit' : ''}" data-act="toggle" role="button" tabindex="0" aria-label="Toggle">${icn(c.icon)}</span><div class="nm"><b>${esc(c.title)}</b>${p.sub ? `<span>${p.sub}</span>` : ''}</div>${p.slider ? `<div class="slw">${p.slider}</div>` : ''}`}</div>
+    <div class="face">${p.face || `<span class="ic ${p.lit ? 'lit' : ''}" data-act="toggle" role="button" tabindex="0" aria-label="Toggle">${icn(c.icon)}</span><div class="nm"><b>${esc(c.title)}</b>${p.sub ? `<span>${p.sub}</span>` : ''}</div>${p.slider ? `<div class="slw">${p.slider}</div>` : ''}`}</div>
     <button class="sw" data-act="toggle" role="switch" aria-checked="${!!p.on}" aria-label="Toggle ${esc(c.title)}"></button></div>`;
 }
 /* sets the outline once the tile has a real size, and again when it changes */
@@ -117,11 +117,14 @@ function sxAfter(c, root) {
   if (c._ro) c._ro.disconnect();
   const o = c.o, mode = o.switch_style, apply = () => {
     const W = el.clientWidth, H = el.clientHeight; if (!W || !H) return;
-    const { SW, SH } = SX, { g, t, lo } = sxGeom(o), B = H - SH / 2 - (mode === 'tab' ? g : 0), x0 = lo + t * (W - SW - 2 * lo), rad = clamp(+o.switch_softness || 0, 0, 30);
+    /* the switch, its gap and the corner softness shrink with the tile (full size from about 210px wide), so a narrow tile is not taken over by it */
+    const s = clamp(W / 210, 0.6, 1), g0 = sxGeom(o), g = g0.g * s, t = g0.t, lo = g0.lo * s, SW = SX.SW * s, SH = SX.SH * s;
+    const B = H - SH / 2 - (mode === 'tab' ? g : 0), x0 = lo + t * (W - SW - 2 * lo), rad = clamp(+o.switch_softness || 0, 0, 30) * s;
     const set = (n, url) => { n.style.webkitMaskImage = url; n.style.maskImage = url; };
-    set(el.querySelector('.shape'), sxMask(W, H, B, mode, g, rad, x0, false));
-    set(el.querySelector('.rim'), sxMask(W, H, B, mode, g, rad, x0, true));
-    el.style.setProperty('--b', B + 'px');
+    set(el.querySelector('.shape'), sxMask(W, H, B, mode, g, rad, x0, false, s));
+    set(el.querySelector('.rim'), sxMask(W, H, B, mode, g, rad, x0, true, s));
+    el.style.setProperty('--s', String(Math.round(s * 1000) / 1000)); el.style.setProperty('--g', g + 'px'); el.style.setProperty('--lo', lo + 'px');
+    el.style.setProperty('--b', B + 'px'); el.classList.toggle('sm', W < 150);
   };
   apply(); if (typeof ResizeObserver !== 'undefined') { c._ro = new ResizeObserver(apply); c._ro.observe(el); }
 }
