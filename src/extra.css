@@ -66,8 +66,8 @@ ha-icon { display: inline-flex; }
 .sx .shape::after { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .4s; pointer-events: none; background: radial-gradient(90% 80% at 50% var(--b), color-mix(in srgb, var(--lc) 45%, transparent), transparent 70%); }
 .nc.sx.on .shape { background: var(--n-sheen), linear-gradient(160deg, color-mix(in srgb, var(--lc) calc(var(--lv, 80%) * .3), rgba(255,255,255,.12)), rgba(255,255,255,.04)); }
 .sx.on .shape::after { opacity: 1; }
-.sx .edge { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 1; }
-.sx .edge .o { fill: none; stroke-width: 1.4; }
+.sx .rim { position: absolute; inset: 0; pointer-events: none; z-index: 1; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.16) 50%, rgba(255,255,255,.22)); transition: background .3s; }
+.sx.on .rim { background: linear-gradient(180deg, rgba(255,255,255,.6), color-mix(in srgb, var(--lc) 30%, transparent) 50%, color-mix(in srgb, var(--lc) 65%, transparent)); }
 .sx .face { position: absolute; inset: 0; z-index: 2; padding: 14px 14px 46px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; min-height: 0; pointer-events: none; }
 .sx .face > * { pointer-events: auto; }
 .sx .face .ic { flex: none; width: 40px; height: 40px; }
@@ -94,11 +94,8 @@ ha-icon { display: inline-flex; }
 :host(.sq) .bc .f-ctl { margin-top: 6px !important; }
 :host(.sq) .bc .f-ctl .ncround { width: 38px; height: 38px; }
 :host(.sq) .bc .grid > div[style*="grid-area:n"] { margin-top: 6px !important; }
-/* Tuner switch position (switch_align) */
-.sx .sw { left: auto; margin-left: 0; }
-.sx.al-center .sw { left: 50%; margin-left: -42px; }
-.sx.al-left .sw { left: var(--m); }
-.sx.al-right .sw { right: var(--m); }
-.sx .shape::after { background: radial-gradient(90% 80% at var(--cx, 50%) var(--b), color-mix(in srgb, var(--lc) 45%, transparent), transparent 70%); }
+/* Tuner switch position (switch_position): --t is 0..1 along the bottom edge, --lo the least distance from each side */
+.sx .sw { margin-left: 0; left: calc(var(--lo, 0px) + var(--t, .5) * (100% - 84px - var(--lo, 0px) * 2)); }
+.sx .shape::after { background: radial-gradient(90% 80% at calc(var(--lo, 0px) + 42px + var(--t, .5) * (100% - 84px - var(--lo, 0px) * 2)) var(--b), color-mix(in srgb, var(--lc) 45%, transparent), transparent 70%); }
 .sx.al-left .face:not(:has(.hd)) { align-items: flex-start; text-align: left; }
 .sx.al-right .face:not(:has(.hd)) { align-items: flex-end; text-align: right; }

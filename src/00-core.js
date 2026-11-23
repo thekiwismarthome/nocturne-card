@@ -73,47 +73,41 @@ const SX_ON = c => ['slot', 'tab'].includes(c.switch_style);
 const SX_ANY = c => !!c.switch_style && c.switch_style !== 'standard';
 const SW_OPTS = [
   { k: 'switch_style', l: 'Switch style', t: 'seg', o: [['standard', 'Corner toggle'], ['slot', 'Slot'], ['tab', 'Tab'], ['overlap', 'Overlap']], d: 'standard' },
-  { k: 'switch_align', l: 'Switch position', t: 'seg', o: [['left', 'Left'], ['center', 'Centre'], ['right', 'Right']], d: 'center', on: SX_ANY },
+  { k: 'switch_position', l: 'Switch position along the bottom edge (0 = left edge, 100 = right edge)', t: 'range', min: 0, max: 100, u: '%', d: 50, on: SX_ANY },
   { k: 'switch_gap', l: 'Switch gap (slot) or wrap margin (tab)', t: 'range', min: 0, max: 20, u: 'px', d: 6, on: SX_ON },
-  { k: 'switch_softness', l: 'Corner softness where the glass meets the switch', t: 'range', min: 0, max: 50, u: '°', d: 40, on: SX_ON },
+  { k: 'switch_softness', l: 'Corner softness where the glass meets the switch', t: 'range', min: 0, max: 24, u: 'px', d: 12, on: SX_ON },
 ];
 /* ok(cfg): does this config use a tile that has the switch? */
 const switchOpts = ok => SW_OPTS.map(o => ({ ...o, when: c => ok(c) && (!o.on || o.on(c)) }));
 const SWITCH_OPTS = switchOpts(c => c.variant !== 'wheel');
-const SX = { R: 28, SW: 84, SH: 40, EDGE: 14 };
-/* where the switch goes: gap, side and the distance from the tile edge (m) when it is not centred. A tab wraps the corner, so its margin is the gap. */
-function sxGeom(o, W) {
-  const { R, SW, SH } = SX, align = ['left', 'right'].includes(o.switch_align) ? o.switch_align : 'center', tab = o.switch_style === 'tab';
-  let g = SX_ON(o) ? clamp(+o.switch_gap || 0, 0, 20) : 0;
-  if (W && align === 'center') g = Math.min(g, Math.max(0, Math.floor(W / 2 - R - (SW - SH) / 2 - SH / 2 - 1)));
-  return { g, align, m: tab ? g : SX.EDGE, tab };
+const SX = { R: 28, SW: 84, SH: 40 };
+/* gap, position (0..1 along the bottom edge) and the least distance (lo) the switch keeps from each side.
+   A tab wraps the switch, so it keeps its margin from the side and the tab ends flush with the tile; a slot or overlap can touch the side. */
+function sxGeom(o) {
+  const tab = o.switch_style === 'tab', g = SX_ON(o) ? clamp(+o.switch_gap || 0, 0, 20) : 0;
+  const pos = o.switch_position === undefined || o.switch_position === null || o.switch_position === '' ? 50 : +o.switch_position;
+  return { g, t: clamp((isNaN(pos) ? 50 : pos) / 100, 0, 1), lo: tab ? g : 0, tab };
 }
-/* the tile outline for the Tuner switch. slot: the glass is cut away around the switch. tab: the glass grows around it. overlap: no cut.
-   Drawn for a centred or left switch; a right switch is the same path mirrored (see sxAfter). */
-function sxShape(W, B, mode, g, ph, align, m) {
-  const { R, SW, SH } = SX, L = (SW - SH) / 2, left = align !== 'center', f = n => Math.round(n * 100) / 100;
-  const CX = left ? m + SW / 2 : W / 2;
-  const head = `M${R},0 H${W - R} A${R},${R} 0 0 1 ${W},${R} V${B - R} A${R},${R} 0 0 1 ${W - R},${B}`;
-  const tailC = ` H${R} A${R},${R} 0 0 1 0,${B - R} V${R} A${R},${R} 0 0 1 ${R},0 Z`;
-  if (mode === 'overlap') return head + tailC;
-  const tab = mode === 'tab', r = SH / 2 + g, sg = tab ? 1 : -1, sweep = tab ? 1 : 0, rx = CX + L, lx = CX - L;
-  const k = left ? (W - R - rx - 2) / r : (CX - R - L - 2) / r, phiMax = Math.max(0, 2 * (Math.atan(k) - Math.PI / 4)), phi = Math.min(ph, phiMax), c = Math.cos(phi), s = Math.sin(phi), t = Math.tan(phi);
-  const Cr = rx + r / c, Ar = Cr + r * t, Pry = B + sg * r * s, Cl = lx - r / c, Al = Cl - r * t;
-  const right = ` H${f(Ar)} Q${f(Cr)},${B} ${f(rx + r * c)},${f(Pry)} A${r},${r} 0 0 ${sweep} ${rx},${B + sg * r}`;
-  if (!left) return head + right + ` H${lx} A${r},${r} 0 0 ${sweep} ${f(lx - r * c)},${f(Pry)} Q${f(Cl)},${B} ${f(Al)},${B}` + tailC;
-  const up = ` V${R} A${R},${R} 0 0 1 ${R},0 Z`;
-  /* tab: the rounded end of the tab runs straight into the left edge. slot: the glass stops above the switch with a rounded corner. */
-  if (tab) return head + right + ` H${lx} A${r},${r} 0 0 1 ${f(lx - r)},${B}` + up;
-  const top = B - r, cr = Math.min(14, top - R);
-  return head + right + ` H${cr} A${cr},${cr} 0 0 1 0,${f(top - cr)}` + up;
+/* the glass outline for the Tuner switch: the tile (a rounded rect) with the switch outline, g px bigger all round, cut out (slot) or added (tab),
+   then softened by blurring and re-thresholding the alpha, which rounds every corner by about 1.9 x sigma. rim = only a thin inner ring, for the edge highlight. */
+function sxMask(W, H, B, mode, g, rad, x0, rim) {
+  const { R, SW, SH } = SX, sigma = Math.max(0.35, rad / 1.9), f = n => Math.round(n * 100) / 100;
+  const notch = fill => `<rect x='${f(x0 - g)}' y='${f(B - SH / 2 - g)}' width='${SW + 2 * g}' height='${SH + 2 * g}' rx='${SH / 2 + g}' fill='${fill}'/>`;
+  const rg = `x='-40' y='-40' width='${W + 80}' height='${H + 80}'`;
+  let defs = `<filter id='f' filterUnits='userSpaceOnUse' ${rg} color-interpolation-filters='sRGB'><feGaussianBlur stdDeviation='${f(sigma)}'/><feColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 12 -5.5'${rim ? " result='a'/><feMorphology in='a' operator='erode' radius='1.2' result='e'/><feComposite in='a' in2='e' operator='out'/>" : '/>'}</filter>`;
+  const tile = `<rect x='0' y='0' width='${W}' height='${B}' rx='${R}'`;
+  let body;
+  if (mode === 'slot') { defs += `<mask id='m' maskUnits='userSpaceOnUse' ${rg}><rect ${rg} fill='#fff'/>${notch('#000')}</mask>`; body = `<g filter='url(#f)'>${tile} mask='url(#m)'/></g>`; }
+  else if (mode === 'tab') body = `<g filter='url(#f)'>${tile}/>${notch('#000')}</g>`;
+  else body = `<g filter='url(#f)'>${tile}/></g>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${W} ${H}' width='${W}' height='${H}'><defs>${defs}</defs>${body}</svg>`)}")`;
 }
 function sxTile(c, p) {
-  const o = c.o, mode = o.switch_style, wide = o.size === 'wide', gid = 'sxg' + c._id, { g, align, m, tab } = sxGeom(o, 0);
-  const pb = 46 + (mode === 'overlap' ? 0 : g), cx = align === 'left' ? `${m + 42}px` : align === 'right' ? `calc(100% - ${m + 42}px)` : '50%';
-  const grad = (id, a, b, d) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="${a}"/><stop offset=".5" stop-color="${p.on ? 'var(--lc)' : '#fff'}" stop-opacity="${b}"/><stop offset="1" stop-color="${p.on ? 'var(--lc)' : '#fff'}" stop-opacity="${d}"/></linearGradient>`;
-  return `<div class="nc sx al-${align} ${p.cls || ''} ${wide ? 'wide' : ''} ${p.on ? 'on' : ''}" style="--rows:3;--m:${m}px;--cx:${cx};--b:calc(100% - ${SX.SH / 2 + (tab ? g : 0)}px);${p.style || ''}">
+  const o = c.o, mode = o.switch_style, wide = o.size === 'wide', { g, t, lo, tab } = sxGeom(o);
+  const pb = 46 + (mode === 'overlap' ? 0 : g), al = t < 0.25 ? 'left' : t > 0.75 ? 'right' : 'center';
+  return `<div class="nc sx al-${al} ${p.cls || ''} ${wide ? 'wide' : ''} ${p.on ? 'on' : ''}" style="--rows:3;--t:${t};--lo:${lo}px;--b:calc(100% - ${SX.SH / 2 + (tab ? g : 0)}px);${p.style || ''}">
     <div class="shape">${imgLayer(c)}</div>
-    <svg class="edge" aria-hidden="true"><defs>${p.on ? grad(gid, .6, .3, .65) : grad(gid, .55, .16, .22)}</defs><path class="o" stroke="url(#${gid})"/></svg>
+    <div class="rim" aria-hidden="true"></div>
     <div class="face" style="padding-bottom:${pb}px">${p.face || `<span class="ic ${p.lit ? 'lit' : ''}" data-act="toggle" role="button" tabindex="0" aria-label="Toggle">${icn(c.icon)}</span><div class="nm"><b>${esc(c.title)}</b>${p.sub ? `<span>${p.sub}</span>` : ''}</div>${p.slider ? `<div class="slw">${p.slider}</div>` : ''}`}</div>
     <button class="sw" data-act="toggle" role="switch" aria-checked="${!!p.on}" aria-label="Toggle ${esc(c.title)}"></button></div>`;
 }
@@ -123,11 +117,10 @@ function sxAfter(c, root) {
   if (c._ro) c._ro.disconnect();
   const o = c.o, mode = o.switch_style, apply = () => {
     const W = el.clientWidth, H = el.clientHeight; if (!W || !H) return;
-    const { SH } = SX, { g, align, m } = sxGeom(o, W), B = H - SH / 2 - (mode === 'tab' ? g : 0);
-    const d = sxShape(W, B, mode, g, (+o.switch_softness || 0) * Math.PI / 180, align, m), tr = align === 'right' ? `translate(${W},0) scale(-1,1)` : '';
-    const url = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${W} ${H}'><path d='${d}' fill='black'${tr ? ` transform='${tr}'` : ''}/></svg>`)}")`, sh = el.querySelector('.shape');
-    sh.style.webkitMaskImage = url; sh.style.maskImage = url;
-    const sv = el.querySelector('.edge'); sv.setAttribute('viewBox', `0 0 ${W} ${H}`); sv.querySelector('.o').setAttribute('d', d); if (tr) sv.querySelector('.o').setAttribute('transform', tr); else sv.querySelector('.o').removeAttribute('transform');
+    const { SW, SH } = SX, { g, t, lo } = sxGeom(o), B = H - SH / 2 - (mode === 'tab' ? g : 0), x0 = lo + t * (W - SW - 2 * lo), rad = clamp(+o.switch_softness || 0, 0, 30);
+    const set = (n, url) => { n.style.webkitMaskImage = url; n.style.maskImage = url; };
+    set(el.querySelector('.shape'), sxMask(W, H, B, mode, g, rad, x0, false));
+    set(el.querySelector('.rim'), sxMask(W, H, B, mode, g, rad, x0, true));
     el.style.setProperty('--b', B + 'px');
   };
   apply(); if (typeof ResizeObserver !== 'undefined') { c._ro = new ResizeObserver(apply); c._ro.observe(el); }

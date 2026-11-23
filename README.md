@@ -5,7 +5,7 @@
 
 One Home Assistant card for every glass tile on a dashboard. You pick a **kind** (light, climate, media player, weather, person ...), pick an **entity of that kind**, and set the options. The entity picker only offers entities of the right domain, so a Light card only lists `light.*`.
 
-> **Beta.** This is `0.1.0-beta.7`. It works, but expect rough edges, and options may be renamed before 1.0. Please [open an issue](https://github.com/thekiwismarthome/nocturne-card/issues) if something looks wrong.
+> **Beta.** This is `0.1.0-beta.8`. It works, but expect rough edges, and options may be renamed before 1.0. Please [open an issue](https://github.com/thekiwismarthome/nocturne-card/issues) if something looks wrong.
 
 ![Tiles](docs/preview-tiles.png)
 ![Cards](docs/preview-cards.png)
@@ -135,9 +135,9 @@ type: custom:nocturne-card
 kind: light
 entity: light.lounge
 switch_style: slot       # standard | slot | tab | overlap
-switch_align: center     # left | center | right
+switch_position: 50      # 0 (left edge) to 100 (right edge)
 switch_gap: 6            # px, 0 to 20
-switch_softness: 40      # degrees, 0 to 50
+switch_softness: 12      # px, 0 to 24
 ```
 
 | `switch_style` | Look |
@@ -151,9 +151,9 @@ switch_softness: 40      # degrees, 0 to 50
 
 On the compact climate tile (`variant: compact`) the icon and name move into a row so the mode buttons still fit above the switch, and the switch glows in the colour of the mode (blue cooling, orange heating).
 
-`switch_align` puts the switch on the left, in the centre or on the right. On the left or right the icon and name line up with the switch, a tab runs straight into the side of the tile, and a slot leaves the corner open above the switch.
+`switch_position` slides the switch along the bottom edge, from 0 (flush with the left side) to 100 (flush with the right side). A slot at the very edge bites the tile corner away. A tab keeps its margin from the side, so it ends flush with the tile. Near either side the icon and name line up with the switch.
 
-`switch_softness` is how far the glass flares where it meets the switch. It stops growing when the edge of the tile runs out of room, and on a narrow tile `switch_gap` is limited to about 12 px.
+`switch_softness` is the radius, in px, that rounds every corner where the glass meets the switch.
 
 ### Square tiles
 
