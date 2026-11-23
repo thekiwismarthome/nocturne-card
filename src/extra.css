@@ -94,3 +94,11 @@ ha-icon { display: inline-flex; }
 :host(.sq) .bc .f-ctl { margin-top: 6px !important; }
 :host(.sq) .bc .f-ctl .ncround { width: 38px; height: 38px; }
 :host(.sq) .bc .grid > div[style*="grid-area:n"] { margin-top: 6px !important; }
+/* Tuner switch position (switch_align) */
+.sx .sw { left: auto; margin-left: 0; }
+.sx.al-center .sw { left: 50%; margin-left: -42px; }
+.sx.al-left .sw { left: var(--m); }
+.sx.al-right .sw { right: var(--m); }
+.sx .shape::after { background: radial-gradient(90% 80% at var(--cx, 50%) var(--b), color-mix(in srgb, var(--lc) 45%, transparent), transparent 70%); }
+.sx.al-left .face:not(:has(.hd)) { align-items: flex-start; text-align: left; }
+.sx.al-right .face:not(:has(.hd)) { align-items: flex-end; text-align: right; }

@@ -135,6 +135,7 @@ type: custom:nocturne-card
 kind: light
 entity: light.lounge
 switch_style: slot       # standard | slot | tab | overlap
+switch_align: center     # left | center | right
 switch_gap: 6            # px, 0 to 20
 switch_softness: 40      # degrees, 0 to 50
 ```
@@ -149,6 +150,8 @@ switch_softness: 40      # degrees, 0 to 50
 ![Slot, tab and overlap](docs/preview-switch.png)
 
 On the compact climate tile (`variant: compact`) the icon and name move into a row so the mode buttons still fit above the switch, and the switch glows in the colour of the mode (blue cooling, orange heating).
+
+`switch_align` puts the switch on the left, in the centre or on the right. On the left or right the icon and name line up with the switch, a tab runs straight into the side of the tile, and a slot leaves the corner open above the switch.
 
 `switch_softness` is how far the glass flares where it meets the switch. It stops growing when the edge of the tile runs out of room, and on a narrow tile `switch_gap` is limited to about 12 px.
 
