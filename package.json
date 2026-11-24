@@ -1,6 +1,6 @@
 {
   "name": "nocturne-card",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "description": "One Home Assistant card for every Nocturne tile: pick a kind, pick an entity.",
   "type": "module",
   "scripts": { "build": "node build.mjs" },
