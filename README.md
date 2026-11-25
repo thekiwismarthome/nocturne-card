@@ -60,6 +60,9 @@ entity: light.lounge
 | `person` | `person.*` | One person: avatar with a presence or phone-battery ring, where they are, distance from home. Layouts `portrait`, `wide`, `photo`. |
 | `family` | `person.*`, `device_tracker.*` (several) | A row of avatars and "2 of 4 home". |
 | `actions` | `scene.*`, `script.*`, `button.*` (several) | A grid of round buttons. |
+| `shortcut` | none | A tile that runs any `tap_action`: go to a view, play a radio station, call a script. Add an `image` for a picture button. |
+| `intercom` | none | A tile for the Kiosk Satellite / ESPHome intercom. Set `my_device` to this screen's name (for example `Ella's Assistant`). It turns green with a hang-up button during a call, and tapping it opens a list of the other screens to ring. `variant: list` shows the list inline instead. |
+| `chores` | none | A progress tile (ring, "2 of 4 done", stars) for one child from [KSH Family Hub](https://github.com/thekiwismarthome/ksh-family-hub). Set `person` to their name. Tapping it opens the Family Hub kids chores screen in a glass dialog. |
 
 Multi-entity kinds take `entities:` (a list). Entries can be a plain entity id or an object with a name and icon:
 
@@ -214,6 +217,29 @@ The `hero` panel has animated weather icons (spinning sun rays, drifting clouds,
 
 Forecasts come from Home Assistant's own weather forecast subscription, so any weather integration works. Rain radar, tides and weather warnings are not included.
 
+### Intercom and Chores (need another project, for now)
+
+Two kinds are not stand-alone. They are front ends for other projects and show nothing useful without them:
+
+| Kind | Works with, for now | Not supported |
+| --- | --- | --- |
+| `intercom` | Kiosk Satellite screens that have an intercom (an `esphome.<node>_intercom_call` service and a `sensor.<name>_intercom` sensor per screen). | SIP, Asterisk, phones, doorbells or any other calling system. |
+| `chores` | [KSH Family Hub](https://github.com/thekiwismarthome/ksh-family-hub) (its Chores part, and its kids card for the popup). | Other chore apps (ChoreOps, Grocy, Todoist and so on). |
+
+The intercom kind is the card side of the screens calling each other, and is kept separate from the Kiosk Satellite code on purpose: the plan is to point it at an Asterisk / IP calling setup later, so the same tile and call list could ring phones and other extensions as well as screens. That is not built yet.
+
+```yaml
+type: custom:nocturne-card
+kind: intercom
+my_device: Ella's Assistant     # this screen, as its intercom sensor is named
+```
+
+```yaml
+type: custom:nocturne-card
+kind: chores
+person: Ella                    # their name in KSH Family Hub, People & guests
+```
+
 ## Themes
 
 The card reads the Nocturne glass tokens (`--nc-raised`, `--nc-well`, `--nc-ok` and friends) from your theme when they exist, and uses built-in glass defaults when they do not.
@@ -223,6 +249,7 @@ The card reads the Nocturne glass tokens (`--nc-raised`, `--nc-well`, `--nc-ok` 
 - The visual editor is built from Home Assistant's own form controls and has only been tested lightly.
 - Weather has four panels. The radar map, tides and warnings from the original dashboard are not included.
 - Media `variant: full` needs the separate `nocturne-music-card` resource, which is not published yet. Without it the card shows the compact tile.
+- `intercom` only works with Kiosk Satellite screens and `chores` only with KSH Family Hub (see above). Asterisk / IP calling is planned for the intercom, not built.
 - Layouts are tuned for the sections dashboard. Masonry works but heights are approximate.
 
 ## Development
