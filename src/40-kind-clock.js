@@ -42,6 +42,19 @@ function clkNight(c, F) {
   const hr = F.parts(new Date()).hour; return hr < 6 || hr >= 19;
 }
 
+/* the weather beside or under the clock: redrawn only when the condition, day or night, or the temperature changes, so the animation runs on */
+function clkWeather(c, el) {
+  const box = el.querySelector('[data-wx]'); if (!box) return;
+  const s = c.S(c.o.weather_entity), ok = s && !['unavailable', 'unknown'].includes(s.state);
+  box.hidden = !ok; if (!ok) return;
+  const a = s.attributes, hourly = (c._fc.hourly && c._fc.hourly.length ? c._fc.hourly : a.forecast_hourly) || [], cond = wxNow(hourly, s.state);
+  const sun = c.st('sun.sun'), hr = new Date().getHours(), night = sun ? sun === 'below_horizon' : hr < 6 || hr >= 19;
+  const temp = a.temperature != null ? Math.round(a.temperature) + '°' : '–', key = [cond, night, temp].join('|');
+  if (box.dataset.v === key) return;
+  box.dataset.v = key; box.setAttribute('aria-label', `${WX_TXT[cond] || nice(cond)}, ${temp}`); box.title = WX_TXT[cond] || nice(cond);
+  box.innerHTML = `${wxAnimIcon(cond, night, 'var(--wxs)')}<b>${temp}</b>`;
+}
+
 function clkDial(o, wide) {
   const mk = o.markers, X = (r, a) => [(100 + r * Math.sin(a * Math.PI / 180)).toFixed(2), (100 - r * Math.cos(a * Math.PI / 180)).toFixed(2)];
   let g = '';
@@ -60,7 +73,10 @@ function clkTick(c) {
   const tm = F.h12 ? `${p.hour % 12 || 12}` : F.pad(p.hour);
   const secs = o.show_seconds ? `<small class="sc">${F.pad(p.second)}</small>` : '', ap = F.h12 ? `<small class="ap">${F.period(d)}</small>` : '';
   set('[data-tm]', `${tm}<i class="co${o.blink ? ' bl' : ''}">:</i>${F.pad(p.minute)}${secs}${ap}`);
-  set('[data-dt]', el.classList.contains('wide') && !el.classList.contains('an') ? F.long(d) : F.short(d));
+  /* weather at one side of a narrow slim bar leaves room for the short date only */
+  const beside = el.classList.contains('cw-left') || el.classList.contains('cw-right');
+  const tight = el.classList.contains('slim') && beside && el.offsetWidth < (el.classList.contains('cw-row') ? 440 : 320);
+  set('[data-dt]', el.classList.contains('wide') && !el.classList.contains('an') && !tight ? F.long(d) : F.short(d));
   const nt = clkNight(c, F), want = o.tint ? (nt ? CLK_NIGHT : CLK_DAY) : '';
   if (el.dataset.nt !== String(nt)) { el.dataset.nt = String(nt); el.classList.toggle('night', nt); el.style.setProperty('--lc', want || 'var(--accent-color)'); }
   const tmr = o.timer_entity && clkRemain(c, o.timer_entity, now), tn = el.querySelector('[data-tmr]');
@@ -69,6 +85,7 @@ function clkTick(c) {
   if (al) { const t = o.alarm_entity && Date.parse(c.st(o.alarm_entity)); const ok = t && t > now; al.closest('.pchip').hidden = !ok; if (ok) { const a = new Date(t); al.textContent = (F.dn(a) !== F.dn(d) ? F.wk(a) + ' ' : '') + F.hm(a); } }
   const lbl = el.querySelector('[data-lbl]'); if (lbl && !lbl.dataset.v) { lbl.dataset.v = '1'; lbl.textContent = (c.cfg.name || '').toUpperCase(); }
   const dw = el.querySelector('[data-dw]'); if (dw) dw.textContent = tmr && el.classList.contains('an') && !el.classList.contains('wide') ? tmr.text : `${F.wk(d)} ${F.dn(d)}`;
+  clkWeather(c, el);
   const hr = el.querySelector('[data-hr]');
   if (hr) {
     const ms = o.smooth ? d.getMilliseconds() : 0, sec = p.second + ms / 1000, min = p.minute + sec / 60, hh = (p.hour % 12) + min / 60;
@@ -83,10 +100,10 @@ function clkTick(c) {
 
 kind({
   id: 'clock', name: 'Clock', domains: null, noEntity: true, noIcon: true, icon: 'clock-outline', grid: { columns: 6, rows: 3 }, tap: { action: 'none' }, hold: { action: 'none' },
-  square: c => c.size !== 'wide',
+  square: c => c.size !== 'wide' && c.size !== 'slim',
   opts: [
     { k: 'variant', l: 'Clock face', t: 'seg', o: [['digital', 'Digital'], ['analog', 'Analogue']], d: 'digital' },
-    SIZE,
+    { ...SIZE, o: [...SIZE.o, ['slim', 'Slim bar']] },
     { k: 'timezone', l: 'Time zone, for example Pacific/Auckland (empty uses yours)', t: 'text' },
     { k: 'hour_format', l: 'Hours', t: 'seg', o: [['auto', 'From your profile'], ['12', '12 hour'], ['24', '24 hour']], d: 'auto' },
     { k: 'show_seconds', l: 'Seconds', t: 'sw', d: true },
@@ -96,17 +113,31 @@ kind({
     { k: 'smooth', l: 'Sweeping second hand', t: 'sw', d: false, when: c => c.variant === 'analog' },
     { k: 'ring', l: 'Seconds ring around the dial', t: 'sw', d: true, when: c => c.variant === 'analog' },
     { k: 'tint', l: 'Warm by day and cool at night (follows sun.sun)', t: 'sw', d: true },
+    { k: 'weather_entity', l: 'Weather: show the current icon and temperature', t: 'entity', domains: ['weather'] },
+    { k: 'weather_position', l: 'Weather position', t: 'seg', o: [['below', 'Below'], ['left', 'Left'], ['right', 'Right']], d: 'right', when: c => !!c.weather_entity },
+    { k: 'weather_layout', l: 'Weather icon and temperature', t: 'seg', o: [['row', 'Side by side'], ['stacked', 'Stacked']], d: 'row', when: c => !!c.weather_entity && c.size === 'slim' },
     { k: 'alarm_entity', l: 'Next alarm (a sensor whose state is a date and time)', t: 'entity', domains: ['sensor'] },
     { k: 'timer_entity', l: 'Timer to count down', t: 'entity', domains: ['timer'] },
   ],
   extraIds: () => ['sun.sun'],
   gridFor: () => ({ columns: 6, rows: 3 }),
+  autoRows: o => o.size === 'slim',
+  /* the hourly forecast says what the sky is doing this hour; a weather entity without one falls back to its state */
+  connect(c) {
+    const id = c.o.weather_entity; if (!id || c._wxSub || !c._hass || !c._hass.connection) return;
+    c._wxSub = true; let sub = null;
+    try { sub = c._hass.connection.subscribeMessage(ev => { c._fc.hourly = ev.forecast || []; clkTick(c); }, { type: 'weather/subscribe_forecast', forecast_type: 'hourly', entity_id: id }); sub.catch(() => {}); } catch (_) {}
+    c._subs.push(() => { c._wxSub = false; c._fc.hourly = null; if (sub) Promise.resolve(sub).then(u => typeof u === 'function' && u()).catch(() => {}); });
+  },
   after(c) {
     clkTick(c);
     if (!c._clk) { c._clk = setInterval(() => clkTick(c), c.o.smooth && c.o.variant === 'analog' ? 60 : 250); c._subs.push(() => { clearInterval(c._clk); c._clk = null; }); }
   },
   render(c) {
     const o = c.o, wide = o.size === 'wide', analog = o.variant === 'analog', F = clkFmt(c), chips = [];
+    const wx = o.weather_entity ? `<div class="wxc" data-wx data-act="more-info" data-e="${esc(o.weather_entity)}" role="button" tabindex="0" hidden></div>` : '';
+    const hw = wx ? `hw cw-${['below', 'left'].includes(o.weather_position) ? o.weather_position : 'right'}` : '';
+    if (o.size === 'slim') return `<div class="nc clk wide slim ${o.tint ? 'tint' : ''} ${hw} ${wx && o.weather_layout === 'row' ? 'cw-row' : ''}"><div class="tm" data-tm></div><div class="dt" data-dt></div>${wx}</div>`;
     if (o.alarm_entity) chips.push(`<span class="pchip" hidden>${icn('alarm', 15)}<b data-al></b></span>`);
     if (o.timer_entity) chips.push(`<span class="pchip" hidden>${icn('timer-sand', 15)}<b data-tmr></b></span>`);
     const zone = o.timezone ? `<span class="tz">${esc(F.bad ? 'Unknown time zone' : F.abbr(new Date()))}</span>` : '';
@@ -114,7 +145,7 @@ kind({
     const read = `<div class="tm" data-tm></div>${o.show_date ? '<div class="dt" data-dt></div>' : ''}`;
     const info = `<div class="info">${analog ? '' : lab}${zone}${chips.length ? `<div class="chs">${chips.join('')}</div>` : ''}</div>`;
     const cls = `clk ${analog ? 'an' : 'dg'} ${wide ? 'wide' : ''} ${o.tint ? 'tint' : ''} ${o.smooth ? 'sm' : ''}`;
-    if (analog) return `<div class="nc ${cls}" style="--rows:3"><div class="cq"><div class="dial">${clkDial(o, wide)}</div>${wide ? `<div class="side">${lab}${read}${info}</div>` : ''}</div></div>`;
-    return `<div class="nc ${cls}" style="--rows:3"><div class="cq"><div class="main">${read}</div>${info}</div></div>`;
+    const body = analog ? `<div class="cq"><div class="dial">${clkDial(o, wide)}</div>${wide ? `<div class="side">${lab}${read}${info}</div>` : ''}</div>` : `<div class="cq"><div class="main">${read}</div>${info}</div>`;
+    return `<div class="nc ${cls} ${hw}" style="--rows:3">${wx ? `<div class="wxw">${body}${wx}</div>` : body}</div>`;
   },
 });

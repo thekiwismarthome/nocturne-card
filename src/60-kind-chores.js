@@ -17,6 +17,7 @@ const chRing = (pct, col) => { const R = 25, C = 2 * Math.PI * R; return `<svg c
 kind({
   id: 'chores', name: 'Chores', title: 'Chores', noEntity: true, noIcon: true, icon: 'broom', square: () => true, grid: { columns: 6, rows: 3 }, tap: { action: 'popup' }, hold: { action: 'none' },
   opts: [
+    TILE_VIEW, ...ICON_OPTS,
     { k: 'person', l: 'KSH Family Hub only: person (their name in People & guests)', t: 'text' },
     { k: 'style', l: 'Look of the chores screen', t: 'select', o: [['', 'From their colour'], ['galaxy', 'Galaxy'], ['candy', 'Candy'], ['ocean', 'Ocean'], ['jungle', 'Jungle']], d: '' },
     { k: 'show_stars', l: 'Show their stars on the tile', t: 'sw', d: true },
@@ -48,6 +49,7 @@ kind({
     if (s.off || s.missing) return `<div class="nc tile chm" style="--rows:3">${imgLayer(c)}<div class="in"><span class="ic" data-act="popup" role="button" tabindex="0">${icn(c.cfg.icon || 'broom')}</span><div class="nm"><b>${esc(name)}</b><span>${s.missing ? 'Person not found' : 'KSH Family Hub is not set up'}</span></div></div></div>`;
     const all = s.total > 0 && s.done >= s.total, pct = s.total ? s.done / s.total : 1, col = all ? 'var(--n-ok)' : s.late ? 'var(--n-warn)' : 'var(--accent-color)';
     const line = !s.total ? (s.late ? `${s.late} late` : 'Nothing today') : all ? 'All done today' : `${s.done} of ${s.total} done${s.late ? ` · ${s.late} late` : ''}`;
-    return `<div class="nc tile chm ${all ? 'on lit' : ''}" style="--rows:3;--lc:${col};--lv:${all ? 60 : 0}%">${imgLayer(c)}<div class="in"><span class="ic ring ${all ? 'lit' : ''}" data-act="popup" role="button" tabindex="0" aria-label="${esc(name)}">${chRing(pct, col)}${icn(all ? 'check-bold' : (c.cfg.icon || 'broom'))}</span>${o.show_stars ? `<span class="tgw"><span class="pchip">${icn('star', 15, 'color:#ffc15a')}${s.stars}</span></span>` : ''}<div class="nm"><b>${esc(name)}</b><span style="${s.late && !all ? 'color:var(--n-warn)' : ''}">${esc(line)}</span></div><div class="slw"><div class="chbar"><i style="width:${Math.round(pct * 100)}%;background:${col}"></i></div></div></div></div>`;
+    if (o.tile_view === 'icon') return iconTile(c, { cls: 'chm', on: all, lit: all, ring: true, level: Math.round(pct * 100), icon: all ? 'check-bold' : (c.cfg.icon || 'broom'), badge: o.show_stars ? `${icn('star', 11, 'color:#ffc15a')}${s.stars}` : '', style: `--lc:${col};--lv:${all ? 60 : 0}%` });
+    return `<div class="nc tile ${o.tile_view === 'centre' ? 'ctr' : ''} chm ${all ? 'on lit' : ''}" style="--rows:3;--lc:${col};--lv:${all ? 60 : 0}%">${imgLayer(c)}<div class="in"><span class="ic ring ${all ? 'lit' : ''}" data-act="popup" role="button" tabindex="0" aria-label="${esc(name)}">${chRing(pct, col)}${icn(all ? 'check-bold' : (c.cfg.icon || 'broom'))}</span>${o.show_stars ? `<span class="tgw"><span class="pchip">${icn('star', 15, 'color:#ffc15a')}${s.stars}</span></span>` : ''}<div class="nm"><b>${esc(name)}</b><span style="${s.late && !all ? 'color:var(--n-warn)' : ''}">${esc(line)}</span></div><div class="slw"><div class="chbar"><i style="width:${Math.round(pct * 100)}%;background:${col}"></i></div></div></div></div>`;
   },
 });

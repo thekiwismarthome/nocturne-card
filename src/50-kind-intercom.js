@@ -57,6 +57,7 @@ kind({
   opts: [
     { k: 'my_device', l: 'Kiosk Satellite only: this screen (the name its intercom sensor shows, for example Ella’s Assistant)', t: 'text' },
     { k: 'variant', l: 'Layout', t: 'seg', o: [['tile', 'Tile (opens a list)'], ['list', 'List card']], d: 'tile' },
+    { ...TILE_VIEW, when: c => c.variant !== 'list' }, ...ICON_OPTS.map(o => ({ ...o, when: c => c.variant !== 'list' && isIcon(c) })),
     { k: 'show_all', l: 'Show every other screen (off: use the devices list in YAML)', t: 'sw', d: true },
   ],
   extraIds: c => Object.keys(c._hass.states).filter(id => /^sensor\..*_intercom(_kiosk)?$/.test(id)),
@@ -78,6 +79,7 @@ kind({
     const m = icModel(c), o = c.o, who = m.me && m.me.who;
     if (o.variant === 'list') return `<div class="nc wide tall icl ${m.busy ? 'on' : ''}" style="--rows:${c.k.gridFor(c).rows};height:auto;min-height:calc(var(--rows) * 56px)">${imgLayer(c)}<div class="in" style="display:grid;gap:12px;align-content:start;height:auto"><div class="nm" style="display:flex;align-items:center;gap:10px"><span class="ic" style="width:40px;height:40px">${icn('phone', 20)}</span><b style="font-size:16px">${esc(c.title)}</b><span style="margin-left:auto;font-size:12px;color:var(--secondary-text-color)">${esc(m.me ? m.me.name : '')}</span></div><div class="iclist">${icRows(c, m)}</div></div></div>`;
     const sub = !m.me ? 'Set up this screen' : m.busy ? `With ${esc(who || '…')}` : m.targets.length ? `Call ${m.targets.length === 1 ? esc(m.targets[0].name) : m.targets.length + ' screens'}` : 'Nobody to call';
-    return `<div class="nc tile icm ${m.busy ? 'on lit' : ''}" style="--rows:3;--lc:${m.busy ? 'var(--n-ok)' : 'var(--accent-color)'};--lv:${m.busy ? 70 : 0}%">${imgLayer(c)}<div class="in"><span class="ic ${m.busy ? 'lit' : ''}" data-act="popup" role="button" tabindex="0" aria-label="${esc(c.title)}">${icn(m.busy ? 'phone-in-talk' : (c.cfg.icon || 'phone'))}</span>${m.busy ? `<span class="tgw"><button class="ncround icend" data-act="hangup" aria-label="Hang up">${icn('phone-hangup', 20)}</button></span>` : ''}<div class="nm"><b>${esc(c.title)}</b><span>${sub}</span></div></div></div>`;
+    if (o.tile_view === 'icon') return iconTile(c, { cls: 'icm', on: m.busy, lit: m.busy, icon: m.busy ? 'phone-in-talk' : (c.cfg.icon || 'phone'), style: `--lc:${m.busy ? 'var(--n-ok)' : 'var(--accent-color)'};--lv:${m.busy ? 70 : 0}%` });
+    return `<div class="nc tile ${o.tile_view === 'centre' ? 'ctr' : ''} icm ${m.busy ? 'on lit' : ''}" style="--rows:3;--lc:${m.busy ? 'var(--n-ok)' : 'var(--accent-color)'};--lv:${m.busy ? 70 : 0}%">${imgLayer(c)}<div class="in"><span class="ic ${m.busy ? 'lit' : ''}" data-act="popup" role="button" tabindex="0" aria-label="${esc(c.title)}">${icn(m.busy ? 'phone-in-talk' : (c.cfg.icon || 'phone'))}</span>${m.busy ? `<span class="tgw"><button class="ncround icend" data-act="hangup" aria-label="Hang up">${icn('phone-hangup', 20)}</button></span>` : ''}<div class="nm"><b>${esc(c.title)}</b><span>${sub}</span></div></div></div>`;
   },
 });

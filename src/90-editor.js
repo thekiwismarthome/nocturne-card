@@ -10,6 +10,7 @@ class NocturneCardEditor extends HTMLElement {
       if (o.t === 'seg' || o.t === 'select') return { name: n, selector: { select: { mode: 'dropdown', options: o.o.map(x => ({ value: x[0], label: x[1] })) } } };
       if (o.t === 'range') return { name: n, selector: { number: { min: o.min, max: o.max, step: 1, mode: 'slider', unit_of_measurement: o.u || '' } } };
       if (o.t === 'entity') return { name: n, selector: { entity: { domain: o.domains, multiple: !!o.multi } } };
+      if (o.t === 'list') return { name: n, selector: { object: { multiple: true, label_field: 'name', fields: o.fields } } };
       return { name: n, selector: { text: {} } };
     };
     const on = o => !o.when || o.when(this._config || {});

@@ -3,6 +3,8 @@ const WX_ICON = { sunny: 'weather-sunny', 'clear-night': 'weather-night', cloudy
 const WX_COL = { sunny: '#ffc15a', 'clear-night': '#a9b6ff', cloudy: '#c3cbe8', partlycloudy: '#ffd27a', rainy: '#6ec8ff', pouring: '#5aa8ff', snowy: '#e3f1ff', 'snowy-rainy': '#cfe6ff', fog: '#b9c2d9', hail: '#cfe6ff', lightning: '#ffe066', 'lightning-rainy': '#ffe066', windy: '#b9d6ff', 'windy-variant': '#b9d6ff', exceptional: '#ff7a85' };
 const WX_TXT = { sunny: 'Sunny', 'clear-night': 'Clear', cloudy: 'Cloudy', partlycloudy: 'Partly cloudy', rainy: 'Rainy', pouring: 'Pouring', snowy: 'Snowy', 'snowy-rainy': 'Sleet', fog: 'Fog', hail: 'Hail', lightning: 'Thunderstorms', 'lightning-rainy': 'Thunderstorms', windy: 'Windy', 'windy-variant': 'Windy', exceptional: 'Exceptional' };
 const wxIcon = (cond, px = 24) => icn(WX_ICON[cond] || 'weather-cloudy', px, `color:${WX_COL[cond] || '#c3cbe8'}`);
+/* what it is doing now: the hourly entry nearest to this moment (within 90 min), else the entity's own state (some integrations report today's condition there) */
+const wxNow = (hourly, state) => { const nowMs = Date.now(), near = hourly.reduce((b, h) => { const d = Math.abs(new Date(h.datetime).getTime() - nowMs); return h.condition && d < b.d ? { d, h } : b; }, { d: 90 * 60e3 + 1, h: null }).h; return near ? near.condition : state; };
 const COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
 const bearing = b => typeof b === 'number' ? COMPASS[Math.round(b / 22.5) % 16] : (b || '');
 const fmtHour = (d, c) => d.toLocaleTimeString(c._hass.locale && c._hass.locale.language, { hour: 'numeric' }).replace(/\s/g, '').toLowerCase();
@@ -56,8 +58,7 @@ kind({
     const s = c.S(c.e); if (!s) return bcard(c, { name: c.title, label: 'Entity not found', rows: 3, wide: false });
     const a = s.attributes, p = c.o.panel, unit = a.temperature_unit || '°C', T = v => v == null ? '–' : Math.round(v) + '°';
     const hourly = (c._fc.hourly && c._fc.hourly.length ? c._fc.hourly : a.forecast_hourly || (a.forecast || []).filter(x => x.is_daytime === undefined)) || [], daily = (c._fc.daily && c._fc.daily.length ? c._fc.daily : a.forecast_daily || a.forecast || []) || [];
-    /* what it is doing now: the hourly entry nearest to this moment (within 90 min), else the entity's own state (some integrations report today's condition there) */
-    const nowMs = Date.now(), near = hourly.reduce((b, h) => { const d = Math.abs(new Date(h.datetime).getTime() - nowMs); return h.condition && d < b.d ? { d, h } : b; }, { d: 90 * 60e3 + 1, h: null }).h, cond = near ? near.condition : s.state;
+    const cond = wxNow(hourly, s.state);
     const wrap = (inner, rows, cls = '', st = '') => `<div class="bc w wx ${cls}" style="--rows:${rows};padding:16px;${st}">${imgLayer(c)}<div class="grid" style="display:block;position:relative;z-index:2;height:100%">${inner}</div></div>`;
     const now = new Date(), loc = c.o.location || c.cfg.name || a.friendly_name || c.title;
     if (p === 'hourly') {

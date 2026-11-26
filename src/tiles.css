@@ -6,7 +6,7 @@
 .sl:disabled { opacity: .35; }
 
 /* ---------- the cards (button-card look) ---------- */
-.bc, .nc { position: relative; border-radius: 28px; color: var(--primary-text-color); font-family: var(--ha-font-family-body); background: var(--n-card-bg); box-shadow: var(--n-card-shadow); -webkit-backdrop-filter: var(--n-blur); backdrop-filter: var(--n-blur); text-align: left; }
+.bc, .nc { position: relative; border-radius: var(--nc-r, 28px); color: var(--primary-text-color); font-family: var(--ha-font-family-body); background: var(--n-card-bg); box-shadow: var(--n-card-shadow); -webkit-backdrop-filter: var(--n-blur); backdrop-filter: var(--n-blur); text-align: left; }
 .bc::before, .nc::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--n-sheen); pointer-events: none; z-index: 1; }
 .bc { width: 166px; padding: 18px; box-sizing: border-box; overflow: visible; } .bc.w { width: 338px; }
 .bc > .grid { position: relative; z-index: 2; display: grid; height: 100%; }

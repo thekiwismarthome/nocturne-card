@@ -70,9 +70,9 @@ const glow = (rgb, a1, a2) => rgb ? { bg: `radial-gradient(130% 100% at 0% 0%, r
 
 /* ---------- Tuner switch: a big switch that sits on the bottom edge of the tile (light, switch, fan) ---------- */
 const SX_ON = c => ['slot', 'tab'].includes(c.switch_style);
-const SX_ANY = c => !!c.switch_style && c.switch_style !== 'standard';
+const SX_ANY = c => !!c.switch_style && !['standard', 'none'].includes(c.switch_style);
 const SW_OPTS = [
-  { k: 'switch_style', l: 'Switch style', t: 'seg', o: [['standard', 'Corner toggle'], ['slot', 'Slot'], ['tab', 'Tab'], ['overlap', 'Overlap']], d: 'standard' },
+  { k: 'switch_style', l: 'Switch style', t: 'seg', o: [['standard', 'Corner toggle'], ['slot', 'Slot'], ['tab', 'Tab'], ['overlap', 'Overlap'], ['none', 'No toggle']], d: 'standard' },
   { k: 'switch_position', l: 'Switch position along the bottom edge (0 = left edge, 100 = right edge)', t: 'range', min: 0, max: 100, u: '%', d: 50, on: SX_ANY },
   { k: 'switch_gap', l: 'Switch gap (slot) or wrap margin (tab)', t: 'range', min: 0, max: 20, u: 'px', d: 6, on: SX_ON },
   { k: 'switch_softness', l: 'Corner softness where the glass meets the switch', t: 'range', min: 0, max: 24, u: 'px', d: 12, on: SX_ON },
@@ -90,8 +90,8 @@ function sxGeom(o) {
 }
 /* the glass outline for the Tuner switch: the tile (a rounded rect) with the switch outline, g px bigger all round, cut out (slot) or added (tab),
    then softened by blurring and re-thresholding the alpha, which rounds every corner by about 1.9 x sigma. rim = only a thin inner ring, for the edge highlight. */
-function sxMask(W, H, B, mode, g, rad, x0, rim, s) {
-  const { R } = SX, SW = SX.SW * s, SH = SX.SH * s, sigma = Math.max(0.35, rad / 1.9), f = n => Math.round(n * 100) / 100;
+function sxMask(W, H, B, mode, g, rad, x0, rim, s, R = SX.R) {
+  const SW = SX.SW * s, SH = SX.SH * s, sigma = Math.max(0.35, rad / 1.9), f = n => Math.round(n * 100) / 100;
   const notch = fill => `<rect x='${f(x0 - g)}' y='${f(B - SH / 2 - g)}' width='${SW + 2 * g}' height='${SH + 2 * g}' rx='${SH / 2 + g}' fill='${fill}'/>`;
   const rg = `x='-40' y='-40' width='${W + 80}' height='${H + 80}'`;
   let defs = `<filter id='f' filterUnits='userSpaceOnUse' ${rg} color-interpolation-filters='sRGB'><feGaussianBlur stdDeviation='${f(sigma)}'/><feColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 12 -5.5'${rim ? " result='a'/><feMorphology in='a' operator='erode' radius='1.2' result='e'/><feComposite in='a' in2='e' operator='out'/>" : '/>'}</filter>`;
@@ -119,10 +119,10 @@ function sxAfter(c, root) {
     const W = el.clientWidth, H = el.clientHeight; if (!W || !H) return;
     /* the switch, its gap and the corner softness shrink with the tile (full size from about 210px wide), so a narrow tile is not taken over by it */
     const s = clamp(W / 210, 0.6, 1), g0 = sxGeom(o), g = g0.g * s, t = g0.t, lo = g0.lo * s, SW = SX.SW * s, SH = SX.SH * s;
-    const B = H - SH / 2 - (mode === 'tab' ? g : 0), x0 = lo + t * (W - SW - 2 * lo), rad = clamp(+o.switch_softness || 0, 0, 30) * s;
+    const R = c._radius(W, H) ?? SX.R, B = H - SH / 2 - (mode === 'tab' ? g : 0), x0 = lo + t * (W - SW - 2 * lo), rad = clamp(+o.switch_softness || 0, 0, 30) * s;
     const set = (n, url) => { n.style.webkitMaskImage = url; n.style.maskImage = url; };
-    set(el.querySelector('.shape'), sxMask(W, H, B, mode, g, rad, x0, false, s));
-    set(el.querySelector('.rim'), sxMask(W, H, B, mode, g, rad, x0, true, s));
+    set(el.querySelector('.shape'), sxMask(W, H, B, mode, g, rad, x0, false, s, R));
+    set(el.querySelector('.rim'), sxMask(W, H, B, mode, g, rad, x0, true, s, R));
     el.style.setProperty('--s', String(Math.round(s * 1000) / 1000)); el.style.setProperty('--g', g + 'px'); el.style.setProperty('--lo', lo + 'px');
     el.style.setProperty('--b', B + 'px'); el.classList.toggle('sm', W < 150);
   };
@@ -132,8 +132,18 @@ function sxAfter(c, root) {
 /* hand-built tile (light, switch, fan, cover, sensor, ...) */
 function tile(c, p) {
   const o = c.o, wide = o.size === 'wide';
-  if (p.tog !== false && o.switch_style && o.switch_style !== 'standard') return sxTile(c, p);
-  return `<div class="nc tile ${p.cls || ''} ${wide ? 'wide' : ''} ${p.on ? 'on' : ''}" style="--rows:3;${p.style || ''}">${imgLayer(c)}<div class="in"><span class="ic ${p.lit ? 'lit' : ''}" data-act="toggle" role="button" tabindex="0" aria-label="Toggle">${icn(c.icon)}</span>${p.tog === false ? '' : `<span class="tgw">${tgl(p.on)}</span>`}<div class="nm"><b>${esc(c.title)}</b>${p.sub ? `<span>${p.sub}</span>` : ''}</div>${p.slider ? `<div class="slw">${p.slider}</div>` : ''}</div></div>`;
+  if (o.tile_view === 'icon' && !wide) return iconTile(c, p);
+  if (p.tog !== false && SX_ANY(o)) return sxTile(c, p);
+  const pill = !(p.tog === false || o.switch_style === 'none'), ctr = o.tile_view === 'centre' && !wide;
+  return `<div class="nc tile ${p.cls || ''} ${ctr ? 'ctr' : ''} ${wide ? 'wide' : ''} ${p.on ? 'on' : ''}" style="--rows:3;${p.style || ''}">${imgLayer(c)}<div class="in"><span class="ic ${p.lit ? 'lit' : ''}" data-act="toggle" role="button" tabindex="0" aria-label="Toggle">${icn(c.icon)}</span>${pill ? `<span class="tgw">${tgl(p.on)}</span>` : ''}<div class="nm"><b>${esc(c.title)}</b>${p.sub ? `<span>${p.sub}</span>` : ''}</div>${p.slider ? `<div class="slw">${p.slider}</div>` : ''}</div></div>`;
+}
+
+/* icon only: a big centred icon, an optional name, and the level as a ring or a fill. The whole tile is the button. */
+function iconTile(c, p) {
+  const o = c.o, lv = p.level, mode = p.ring ? 'ring' : o.level_style, has = lv != null, R = 46, L = 2 * Math.PI * R;
+  const ring = has && mode === 'ring' ? `<svg class="lvr" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="${R}" class="bg"/>${(p.on || p.ring) && lv > 0 ? `<circle cx="50" cy="50" r="${R}" class="fg" stroke-dasharray="${(L * lv / 100).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 50 50)"/>` : ''}</svg>` : '';
+  const named = o.show_name !== false;
+  return `<div class="nc ico ${p.cls || ''} ${p.on ? 'on' : ''} ${p.lit ? 'lit' : ''} ${named ? '' : 'noname'} ${o.tile_bg === false ? 'bare' : ''}" style="--rows:3;${p.style || ''}">${p.noImage ? '' : imgLayer(c)}${has && mode === 'fill' ? `<i class="fill" style="height:${p.on ? lv : 0}%"></i>` : ''}<span class="disc ${ring ? 'ringed' : ''}">${ring}<span class="ic ${p.lit ? 'lit' : ''}" style="${p.icStyle || ''}">${p.iconHtml || icn(p.icon || c.icon)}</span></span>${named ? `<b class="lbl">${esc(c.title)}</b>` : ''}${p.badge ? `<span class="bdg">${p.badge}</span>` : ''}</div>`;
 }
 
 /* ---------- kinds registry ---------- */
@@ -141,7 +151,16 @@ const KINDS = {};
 const SIZE = { k: 'size', l: 'Size', t: 'seg', o: [['small', 'Small'], ['wide', 'Wide']], d: 'small' };
 const SHOW_STATE = { k: 'show_state', l: 'Show state line', t: 'sw', d: false };
 const SQUARE = { k: 'square', l: 'Square tile (so tiles line up like a grid)', t: 'sw', d: true };
-function kind(def) { def.opts = [...(def.opts || []), ...(def.square ? [{ ...SQUARE, when: def.square }] : []), ...(def.noImage ? [] : IMG_OPTS)]; def.defaults = Object.assign({}, ...(def.opts || []).map(o => ({ [o.k]: o.d !== undefined ? o.d : IMG_DEFAULTS[o.k] })), def.noImage ? {} : IMG_DEFAULTS); KINDS[def.id] = def; return def; }
+const CORNERS = { k: 'corners', l: 'Corner roundness, % of the tile (untouched: follows the theme, or 28px)', t: 'range', min: 0, max: 50, u: '%' };
+/* how a small tile is laid out (light, switch, fan, shortcut, intercom, chores) */
+const TILE_VIEW = { k: 'tile_view', l: 'Tile layout', t: 'seg', o: [['standard', 'Standard'], ['centre', 'Centred'], ['icon', 'Icon only']], d: 'standard' };
+const isIcon = c => c.tile_view === 'icon';
+const ICON_OPTS = [
+  { k: 'show_name', l: 'Show the name', t: 'sw', d: true, when: isIcon },
+  { k: 'tile_bg', l: 'Glass tile behind the icon', t: 'sw', d: true, when: isIcon },
+];
+const LEVEL = { k: 'level_style', l: 'Show the level as', t: 'seg', o: [['none', 'Nothing'], ['ring', 'A ring'], ['fill', 'A fill']], d: 'none', when: isIcon };
+function kind(def) { def.opts = [...(def.opts || []), ...(def.square ? [{ ...SQUARE, when: def.square }] : []), CORNERS, ...(def.noImage ? [] : IMG_OPTS)]; def.defaults = Object.assign({}, ...(def.opts || []).map(o => ({ [o.k]: o.d !== undefined ? o.d : IMG_DEFAULTS[o.k] })), def.noImage ? {} : IMG_DEFAULTS); KINDS[def.id] = def; return def; }
 
 /* ---------- the card ---------- */
 let SEQ = 0;
@@ -159,10 +178,14 @@ class NocturneCard extends HTMLElement {
     this.style.setProperty('--rows', this._grid().rows);
   }
   get hass() { return this._hass; }
-  set hass(h) { const first = !this._hass; this._hass = h; if (this.k) this._update(first); }
+  set hass(h) {
+    const old = this._hass, first = !old; this._hass = h; if (!this.k) return; this._update(first);
+    /* a new theme can change the corners without resizing anything; HA applies it just after handing over hass */
+    if (old && (old.themes !== h.themes || old.selectedTheme !== h.selectedTheme)) setTimeout(() => this.isConnected && this.refresh(), 100);
+  }
   connectedCallback() { if (this.k && this._hass) { if (this.k.connect) this.k.connect(this); this._update(true); } }
   disconnectedCallback() { this._unsub(); }
-  _unsub() { if (this._ro) this._ro.disconnect(); this._subs.forEach(p => typeof p === 'function' ? p() : Promise.resolve(p).then(u => typeof u === 'function' && u()).catch(() => {})); this._subs = []; }
+  _unsub() { if (this._ro) this._ro.disconnect(); if (this._rro) this._rro.disconnect(); this._subs.forEach(p => typeof p === 'function' ? p() : Promise.resolve(p).then(u => typeof u === 'function' && u()).catch(() => {})); this._subs = []; }
 
   /* which entities does this card depend on? every entity id found in the config, plus whatever the kind adds */
   _entityIds() {
@@ -181,6 +204,27 @@ class NocturneCard extends HTMLElement {
     this._render();
   }
   refresh() { this._rendered = false; this._render(); }
+
+  /* corners: a % of the card's short side (counted up to 150px), so smaller tiles get tighter corners. Set it for a whole theme (nc-corners) or per card
+     (corners). With neither, or with corners: fixed, the card keeps its 28px */
+  _cornerPct() {
+    let p = this.o.corners;
+    if (p === 'fixed') return null;
+    if (p === undefined || p === null || p === '') p = this.isConnected ? getComputedStyle(this).getPropertyValue('--nc-corners') : '';
+    const n = parseFloat(p); return isNaN(n) ? null : clamp(n, 0, 50);
+  }
+  _radius(w, h) { const n = this._cornerPct(); return n === null ? null : Math.round(n / 100 * Math.min(w, h, 150)); }
+  _corners() {
+    if (this._rro) { this._rro.disconnect(); this._rro = null; }
+    const el = this.shadowRoot.querySelector('.nc,.bc,.lc'); if (!el) return;
+    const apply = () => {
+      const n = this._cornerPct(), W = el.offsetWidth, H = el.offsetHeight;
+      if (n === null) { this.style.removeProperty('--nc-cr'); el.style.removeProperty('--nc-r'); return; }
+      this.style.setProperty('--nc-cr', n);
+      if (W && H) el.style.setProperty('--nc-r', this._radius(W, H) + 'px');
+    };
+    apply(); if (typeof ResizeObserver !== 'undefined') { this._rro = new ResizeObserver(apply); this._rro.observe(el); }
+  }
 
   /* ---- state helpers used by the kinds ---- */
   S(id) { return id && this._hass ? this._hass.states[id] : undefined; }
@@ -203,6 +247,7 @@ class NocturneCard extends HTMLElement {
     this.shadowRoot.innerHTML = `<style>${CSS}</style>${body}`;
     if (!this._bound) this._bind();
     if (this.k.after) this.k.after(this, this.shadowRoot);
+    this._corners();
     this._dirty = false;
   }
 
@@ -257,9 +302,9 @@ class NocturneCard extends HTMLElement {
     if (a === 'popup') return fire(this, 'hass-more-info', { entityId: e });
   }
 
-  _grid() { if (!this.k) return { columns: 6, rows: 3 }; const g = this.k.gridFor ? this.k.gridFor(this) : this.k.grid; return { columns: this.o.size === 'wide' ? 12 : g.columns, rows: g.rows }; }
+  _grid() { if (!this.k) return { columns: 6, rows: 3 }; const g = this.k.gridFor ? this.k.gridFor(this) : this.k.grid; return { columns: ['wide', 'slim'].includes(this.o.size) ? 12 : g.columns, rows: g.rows }; }
   /* square tiles: the height follows the width, so the tile needs no fixed number of rows */
   _isSq() { return !!(this.k && this.o.square && this.k.square && this.k.square(this.o) && this._grid().columns <= 6); }
   getCardSize() { return this._grid().rows; }
-  getGridOptions() { const g = this._grid(); return this._isSq() ? { columns: g.columns, rows: 'auto', min_columns: 3 } : { columns: g.columns, rows: g.rows, min_columns: 3, min_rows: 2 }; }
+  getGridOptions() { const g = this._grid(); return this._isSq() || (this.k && this.k.autoRows && this.k.autoRows(this.o)) ? { columns: g.columns, rows: 'auto', min_columns: 3 } : { columns: g.columns, rows: g.rows, min_columns: 3, min_rows: 2 }; }
 }

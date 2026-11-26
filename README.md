@@ -90,7 +90,57 @@ entities:
 | `image_blur` | Blur in px. |
 | `image_fade` | Darken the image so the text stays readable. |
 
+| `corners` | Corner roundness, 0 to 50. See [Corners](#corners). |
+
 The visual editor lists every option for the chosen kind. The YAML view shows only the ones you changed.
+
+### Corners
+
+By default every card has 28px corners. Set a roundness instead and the radius follows the size of the card, so small tiles get tighter corners than big ones. It is a percentage of the card's shorter side, counted up to 150px: at `18`, a 150px tile gets 27px and a 90px tile gets 16px. Artwork inside the media player follows it too.
+
+Set it once for a whole theme:
+
+```yaml
+my_theme:
+  nc-corners: '18'
+```
+
+or on one card, which wins over the theme:
+
+```yaml
+corners: 18      # 0 to 50, or fixed for 28px
+```
+
+The space between tiles belongs to the dashboard, not the card. A theme can tighten it with Home Assistant's own variables:
+
+```yaml
+  ha-view-sections-row-gap: 8px        # between sections, and above the first one
+  ha-section-grid-row-gap: 6px         # between cards in a section
+  ha-section-grid-column-gap: 6px
+  grid-card-gap: 6px                   # inside a grid card
+
+```
+
+### Tile layout (light, switch, fan, shortcut, intercom and chores)
+
+```yaml
+type: custom:nocturne-card
+kind: light
+entity: light.lounge
+tile_view: centre        # standard | centre | icon
+switch_style: none       # no toggle: tapping the tile already switches it
+```
+
+| Option | What it does |
+| --- | --- |
+| `tile_view: centre` | Icon and name centred, with the slider underneath. A tile narrower than about 125px drops the slider and the second line. |
+| `tile_view: icon` | A big icon and the name. The whole tile is the button. Suits 4 or 5 tiles per row. |
+| `level_style` | Icon only, light and fan: show the brightness or speed as a `ring`, a `fill` or `none`. |
+| `show_name` | Icon only: `false` hides the name. |
+| `tile_bg` | Icon only: `false` removes the glass tile and leaves the icon. |
+| `switch_style: none` | Light, switch and fan: no toggle on a standard or centred tile. |
+
+For more than 4 tiles per row, put them in a grid card with `columns: 5`.
 
 ### Person card
 
@@ -122,7 +172,25 @@ artwork: blurred                 # off | sharp | soft | blurred
 icon_artwork: true               # show the artwork in the top-left button (tile)
 spin: true                       # rotate the artwork while playing (tile button and full player)
 shuffle: true                    # shuffle and repeat buttons on both layouts
+power: auto                      # auto | show | hide
+media_view: slim                 # classic | slim | big
+shortcut_style: art              # art | names | pill
+shortcut_columns: 7              # 4 to 9
+shortcut_wrap: false             # true puts the extra ones on a second row
+shortcut_gap: 6                  # px
+shortcuts:
+  - name: Bedtime songs
+    media_type: playlist         # playlist | album | radio | artist | track
+    media_id: Bedtime Songs      # optional, the name is used when empty
+    image: /local/bedtime.png
+  - name: Radio
+    media_type: radio
+    icon: mdi:radio
 ```
+
+`power: auto` shows the power switch only when the player says it can be turned on or off.
+
+Shortcuts play through [Music Assistant](https://www.music-assistant.io/) (`music_assistant.play_media`), so they need a Music Assistant player. The one that is playing is highlighted. A player with shortcuts, or in the `slim` or `big` style, takes the height it needs: if the card already has fixed `rows` in its layout settings, set them to auto.
 
 Only the top-left button opens Home Assistant's more-info dialog. Tapping the body of the tile or anything in the full player does nothing extra.
 
@@ -136,7 +204,7 @@ By default the tile has a small toggle in the top-right corner. Set `switch_styl
 type: custom:nocturne-card
 kind: light
 entity: light.lounge
-switch_style: slot       # standard | slot | tab | overlap
+switch_style: slot       # standard | slot | tab | overlap | none
 switch_position: 50      # 0 (left edge) to 100 (right edge)
 switch_gap: 6            # px, 0 to 20
 switch_softness: 12      # px, 0 to 24
@@ -148,6 +216,7 @@ switch_softness: 12      # px, 0 to 24
 | `slot` | The glass is cut away around the switch, with `switch_gap` px of space all round. |
 | `tab` | The glass grows a tab that wraps the lower half of the switch, with `switch_gap` px of margin. |
 | `overlap` | No cut. The switch straddles the edge. |
+| `none` | No toggle at all. |
 
 ![Slot, tab and overlap](docs/preview-switch.png)
 
@@ -178,7 +247,7 @@ A clock needs no entity. Pick `variant: digital` or `variant: analog`.
 type: custom:nocturne-card
 kind: clock
 variant: analog          # digital | analog
-size: small              # small (square tile) | wide
+size: small              # small (square tile) | wide | slim (one-line time and date)
 name: Home               # optional label
 timezone: Pacific/Auckland   # optional, empty uses yours
 hour_format: auto        # auto | 12 | 24 (auto follows your Home Assistant profile)
@@ -198,6 +267,9 @@ timer_entity: timer.eggs
 | `ring` | analog | A glowing ring that fills once a minute. |
 | `smooth` | analog | A sweeping second hand instead of a ticking one. |
 | `tint` | both | Warm amber by day and cool violet at night, from `sun.sun`. A clock set to another `timezone` uses the hour there instead. |
+| `weather_entity` | both | A weather entity. Shows an animated icon for this hour with the current temperature under it (beside it on the slim bar). Tap it for more info. The icon follows the hourly forecast, or the entity's state if it has none. |
+| `weather_position` | both | `right` (default), `left` or `below` the clock. |
+| `weather_layout` | slim bar | `row` (default) puts the icon and temperature side by side, `stacked` puts the temperature under the icon. A narrow bar with the weather at one side shows the short date. |
 | `timezone` | both | Any IANA zone, for example `Europe/London`. The zone abbreviation shows on the tile. |
 | `alarm_entity` | digital, wide analogue | A sensor whose state is a date and time, for example the next alarm from the Companion app. Shows a chip such as "TUE 7:26 am". Hidden when there is no alarm. |
 | `timer_entity` | both | A `timer` entity. A chip counts down while it runs and dims when paused. On a small analogue dial the countdown replaces the date. |

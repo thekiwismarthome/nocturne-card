@@ -48,12 +48,24 @@ function resolvePlayer(c) {
 }
 kind({
   id: 'media', name: 'Media player', domains: ['media_player'], icon: 'speaker', grid: { columns: 12, rows: 3 }, tap: { action: 'none' }, hold: { action: 'none' },
-  opts: [{ k: 'variant', l: 'Layout', t: 'seg', o: [['compact', 'Compact tile'], ['full', 'Full player']], d: 'compact' }, { k: 'volume', l: 'Volume slider', t: 'sw', d: true }, { k: 'shuffle', l: 'Shuffle and repeat buttons', t: 'sw', d: true }, { k: 'spin', l: 'Rotate the artwork while playing (tile button and full player)', t: 'sw', d: true },
+  opts: [{ k: 'variant', l: 'Layout', t: 'seg', o: [['compact', 'Compact tile'], ['full', 'Full player']], d: 'compact' }, { k: 'volume', l: 'Volume slider', t: 'sw', d: true }, { k: 'power', l: 'Power switch', t: 'seg', o: [['auto', 'If the player can'], ['show', 'Show'], ['hide', 'Hide']], d: 'auto' }, { k: 'shuffle', l: 'Shuffle and repeat buttons', t: 'sw', d: true }, { k: 'spin', l: 'Rotate the artwork while playing (tile button and full player)', t: 'sw', d: true },
     { k: 'icon_artwork', l: 'Show the artwork in the top-left button', t: 'sw', d: false },
+    { k: 'media_view', l: 'Compact tile style', t: 'seg', o: [['classic', 'Classic'], ['slim', 'Slim'], ['big', 'Big artwork']], d: 'classic', when: c => c.variant !== 'full' },
+    { k: 'shortcuts', l: 'Shortcuts (albums, playlists, stations; needs Music Assistant)', t: 'list', when: c => c.variant !== 'full', fields: {
+      name: { label: 'Name', required: true, selector: { text: {} } },
+      media_type: { label: 'Type', selector: { select: { mode: 'dropdown', options: ['playlist', 'album', 'radio', 'artist', 'track'] } } },
+      media_id: { label: 'What to play (name or URI; empty uses the name)', selector: { text: {} } },
+      image: { label: 'Picture URL', selector: { text: {} } },
+      icon: { label: 'Icon, when there is no picture', selector: { icon: {} } } } },
+    { k: 'shortcut_style', l: 'Shortcut style', t: 'seg', o: [['art', 'Artwork'], ['names', 'Artwork and names'], ['pill', 'Name pills']], d: 'art', when: c => c.variant !== 'full' },
+    { k: 'shortcut_columns', l: 'Shortcuts per row', t: 'range', min: 4, max: 9, d: 5, when: c => c.variant !== 'full' && c.shortcut_style !== 'pill' },
+    { k: 'shortcut_wrap', l: 'Extra shortcuts go on a second row (off: swipe sideways)', t: 'sw', d: false, when: c => c.variant !== 'full' && c.shortcut_style !== 'pill' },
+    { k: 'shortcut_gap', l: 'Space between shortcuts', t: 'range', min: 0, max: 16, u: 'px', d: 8, when: c => c.variant !== 'full' },
     { k: 'artwork', l: 'Artwork as background', t: 'seg', o: [['off', 'Off'], ['sharp', 'Sharp'], ['soft', 'Soft'], ['blurred', 'Blurred']], d: 'off' },
     { k: 'players', l: 'Players this card can offer', t: 'entity', domains: ['media_player'], multi: true }, { k: 'pinned_player', l: 'Pinned player', t: 'entity', domains: ['media_player'] },
     { k: 'start', l: 'Start on', t: 'seg', o: [['local', 'This device'], ['pinned', 'Pinned player'], ['last', 'Last used']], d: 'local' }],
   gridFor: c => c.o.variant === 'full' && customElements.get('nocturne-music-card') ? { columns: 12, rows: 11 } : { columns: 12, rows: 3 },
+  autoRows: o => o.variant !== 'full' && !!((o.shortcuts || []).length || (o.media_view && o.media_view !== 'classic')),
   extraIds: c => (c.o.players || []).concat(c.o.pinned_player),
   sig: c => c._device || '',
   connect(c) { if (c._deviceAsked) return; c._deviceAsked = true; try { const ks = window.kioskSatellite; const r = ks && ks.getDeviceInfo && ks.getDeviceInfo(); Promise.resolve(r).then(i => { const n = i && (i.name || i.deviceName); if (n) { c._device = n; c._update(true); } }).catch(() => {}); } catch (_) {} },
@@ -64,17 +76,35 @@ kind({
     const label = a.media_title ? `${esc(a.media_title)}${a.media_artist ? ' · ' + esc(a.media_artist) : ''}` : esc(nice(s ? s.state : 'unavailable'));
     const T = (svc, ic, col) => round(ic, 'media_player.' + svc, { entity_id: id }, col);
     const pic = a.entity_picture, art = o.icon_artwork && pic ? `<div style="width:100%;height:100%;border-radius:50%;background:url('${esc(c.url(pic))}') center/cover;animation:ncspin 12s linear infinite;animation-play-state:${play && o.spin ? 'running' : 'paused'}"></div>` : '';
-    return bcard(c, { name: c.cfg.name || (s ? c.fname(id) : c.title), icon: c.cfg.icon || a.icon || c.k.icon, iconHtml: art, iconColor: play ? 'var(--accent-color)' : undefined, label, tog: tgl(on, 'toggle', id), rows: 3, wide: true, image: undefined, areas: "'i tr tog' 'n n n' 'l l l' 'ctl ctl ctl'", cols: 'auto 1fr auto',
-      fields: { tr: `<div style="display:flex;gap:6px">${T('media_previous_track', 'skip-previous')}${T('media_play_pause', play ? 'pause' : 'play', 'var(--accent-color)')}${T('media_next_track', 'skip-next')}</div>` }, fieldCss: { tr: 'justify-self:center;align-self:center;' },
-      ctl: (() => {
-        const feat = num(a.supported_features) || 0, canShuf = o.shuffle && (a.shuffle !== undefined || (feat & 32768)), canRep = o.shuffle && (a.repeat !== undefined || (feat & 262144));
-        const sm = (icon, svc, data, on, label) => `<button class="ncround" style="width:34px;height:34px;${on ? 'color:var(--accent-color)' : ''}" aria-label="${label}" aria-pressed="${!!on}" ${svcAttr('media_player.' + svc, data)}>${icn(icon, 17)}</button>`;
-        const rep = a.repeat || 'off', nextRep = { off: 'all', all: 'one', one: 'off' }[rep] || 'all';
-        const shuf = canShuf ? sm(a.shuffle ? 'shuffle' : 'shuffle-disabled', 'shuffle_set', { entity_id: id, shuffle: !a.shuffle }, a.shuffle, 'Shuffle') : '';
-        const rp = canRep ? sm(rep === 'one' ? 'repeat-once' : rep === 'all' ? 'repeat' : 'repeat-off', 'repeat_set', { entity_id: id, repeat: nextRep }, rep !== 'off', 'Repeat') : '';
-        const vol = o.volume ? `<div class="ncmslider" style="flex:1;min-width:0">${slider('media_player.volume_set', { entity_id: id }, 'volume_level', Math.round((a.volume_level || 0) * 100), { min: 0, scale: 0.01, label: 'Volume' })}</div>` : '<div style="flex:1"></div>';
-        return shuf || rp || o.volume ? `<div style="display:flex;align-items:center;gap:8px">${shuf}${vol}${rp}</div>` : '';
-      })() }).replace('<div class="grid"', `${artLayer(c, id)}<div class="grid"`);
+    /* power: only for players that say they can be turned on and off (supported_features 128 / 256), unless forced */
+    const feat = num(a.supported_features) || 0, power = o.power === 'show' || (o.power !== 'hide' && !!(feat & (128 | 256)));
+    const name = c.cfg.name || (s ? c.fname(id) : c.title);
+    const canShuf = o.shuffle && (a.shuffle !== undefined || (feat & 32768)), canRep = o.shuffle && (a.repeat !== undefined || (feat & 262144));
+    const sm = (icon, svc, data, on, label) => `<button class="ncround" style="width:34px;height:34px;${on ? 'color:var(--accent-color)' : ''}" aria-label="${label}" aria-pressed="${!!on}" ${svcAttr('media_player.' + svc, data)}>${icn(icon, 17)}</button>`;
+    const rep = a.repeat || 'off', nextRep = { off: 'all', all: 'one', one: 'off' }[rep] || 'all';
+    const shuf = canShuf ? sm(a.shuffle ? 'shuffle' : 'shuffle-disabled', 'shuffle_set', { entity_id: id, shuffle: !a.shuffle }, a.shuffle, 'Shuffle') : '';
+    const rp = canRep ? sm(rep === 'one' ? 'repeat-once' : rep === 'all' ? 'repeat' : 'repeat-off', 'repeat_set', { entity_id: id, repeat: nextRep }, rep !== 'off', 'Repeat') : '';
+    const vol = o.volume ? `<div class="ncmslider" style="flex:1;min-width:0">${slider('media_player.volume_set', { entity_id: id }, 'volume_level', Math.round((a.volume_level || 0) * 100), { min: 0, scale: 0.01, label: 'Volume' })}</div>` : '<div style="flex:1"></div>';
+    const volRow = shuf || rp || o.volume ? `<div style="display:flex;align-items:center;gap:8px">${shuf}${vol}${rp}</div>` : '';
+    /* shortcuts: chips that play an album, playlist or station on this player */
+    const list = o.shortcuts || [], low = x => String(x || '').toLowerCase(), now = [a.media_album_name, a.media_title, a.media_channel, a.media_playlist].map(low).filter(Boolean);
+    const cs = o.shortcut_style || 'art';
+    const per = clamp(+o.shortcut_columns || 5, 3, 10), cn = Math.min(per, Math.max(4, list.length)), swipe = !o.shortcut_wrap && list.length > cn, cg = o.shortcut_gap === undefined ? 8 : num(o.shortcut_gap) || 0;
+    const chips = list.length ? `<div class="ncqs ${cs} ${o.shortcut_wrap ? 'wrap' : ''}" style="--n:${swipe ? cn + 0.35 : cn};--gaps:${swipe ? cn : cn - 1};--cg:${cg}px">${list.map(q => { const hit = on && play && now.includes(low(q.media_id || q.name)); return `<button class="ncq ${hit ? 'now' : ''}" aria-label="Play ${esc(q.name)}" ${svcAttr('music_assistant.play_media', { entity_id: id, media_type: q.media_type || 'playlist', media_id: q.media_id || q.name, enqueue: q.enqueue || 'replace' })}><span class="qa" ${q.image ? `style="background-image:url('${esc(c.url(q.image))}')"` : ''}>${q.image ? '' : icn(q.icon || 'music', 18)}</span>${cs === 'art' ? '' : `<em>${esc(q.name)}</em>`}</button>`; }).join('')}</div>` : '';
+    const view = o.media_view || 'classic';
+    if (view !== 'classic') {
+      const cover = `<span class="mart ${play && o.spin && view === 'slim' ? 'spin' : ''}" data-act="more-info" ${pic ? `style="background-image:url('${esc(c.url(pic))}')"` : ''}>${pic ? '' : icn('music', 28)}</span>`;
+      const trans = `<div class="mctl">${view === 'big' ? T('media_previous_track', 'skip-previous') : ''}${T('media_play_pause', play ? 'pause' : 'play', 'var(--accent-color)')}${T('media_next_track', 'skip-next')}${power ? tgl(on, 'toggle', id) : ''}</div>`;
+      const title = esc(a.media_title || nice(s ? s.state : 'unavailable')), who = esc(a.media_title ? (a.media_artist || name) : name);
+      const text = `<div class="mtx"><b>${title}</b><span>${who}</span></div>`;
+      return `<div class="bc w auto mv ${view}">${artLayer(c, id)}<div class="mbody">${view === 'big'
+        ? `<div class="mrow">${cover}<div class="minfo">${text}${trans}</div></div>${volRow}`
+        : `<div class="mrow">${cover}${text}${trans}</div>${o.volume ? volRow : ''}`}${chips}</div></div>`;
+    }
+    const html = bcard(c, { name, icon: c.cfg.icon || a.icon || c.k.icon, iconHtml: art, iconColor: play ? 'var(--accent-color)' : undefined, label, tog: power ? tgl(on, 'toggle', id) : '', rows: 3, wide: true, image: undefined, cls: chips ? 'auto' : '', areas: power ? "'i tr tog' 'n n n' 'l l l' 'ctl ctl ctl'" : "'i tr' 'n n' 'l l' 'ctl ctl'", cols: power ? 'auto 1fr auto' : 'auto 1fr',
+      fields: { tr: `<div style="display:flex;gap:${power ? 6 : 10}px">${T('media_previous_track', 'skip-previous')}${T('media_play_pause', play ? 'pause' : 'play', 'var(--accent-color)')}${T('media_next_track', 'skip-next')}</div>` }, fieldCss: { tr: `justify-self:${power ? 'center' : 'end'};align-self:center;` },
+      ctl: volRow + chips });
+    return html.replace('<div class="grid"', `${artLayer(c, id)}<div class="grid"`);
   },
   after(c, root) {
     const host = root.querySelector('.mc'); if (!host) return;

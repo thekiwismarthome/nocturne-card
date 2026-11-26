@@ -10,7 +10,7 @@ const lightInfo = (c, id) => {
 };
 kind({
   id: 'light', square: c => c.variant !== 'wheel', name: 'Light', domains: ['light'], icon: 'lightbulb', grid: { columns: 6, rows: 3 }, tap: { action: 'toggle' }, hold: { action: 'popup' },
-  opts: [{ k: 'variant', l: 'Layout', t: 'seg', o: [['tile', 'Tile'], ['wheel', 'Colour wheel card']], d: 'tile' }, { k: 'layout', l: 'Wheel card shape', t: 'seg', o: [['tall', 'Tall'], ['wide', 'Wide']], d: 'tall' }, SIZE, { k: 'show_slider', l: 'Brightness slider on the card', t: 'sw', d: true }, SHOW_STATE, ...SWITCH_OPTS],
+  opts: [{ k: 'variant', l: 'Layout', t: 'seg', o: [['tile', 'Tile'], ['wheel', 'Colour wheel card']], d: 'tile' }, { k: 'layout', l: 'Wheel card shape', t: 'seg', o: [['tall', 'Tall'], ['wide', 'Wide']], d: 'tall' }, SIZE, { ...TILE_VIEW, when: c => c.variant !== 'wheel' }, { ...LEVEL, when: c => c.variant !== 'wheel' && isIcon(c) }, ...ICON_OPTS.map(o => ({ ...o, when: c => c.variant !== 'wheel' && isIcon(c) })), { k: 'show_slider', l: 'Brightness slider on the card', t: 'sw', d: true }, SHOW_STATE, ...SWITCH_OPTS],
   tapFor: c => c.o.variant === 'wheel' ? { action: 'none' } : { action: 'toggle' },
   holdFor: c => c.o.variant === 'wheel' ? { action: 'more-info' } : { action: 'popup' },
   gridFor: c => { if (c.o.variant !== 'wheel') return { columns: 6, rows: 3 }; const i = lightInfo(c, c.e), wide = c.o.layout === 'wide'; return wide ? { columns: 'full', rows: i.caps === 'color' ? 5 : 3 } : { columns: 12, rows: i.caps === 'color' ? 7 : i.caps === 'dim' ? 3 : 2 }; },
@@ -19,7 +19,7 @@ kind({
     if (c.o.variant === 'wheel') return wheelCard(c);
     const i = lightInfo(c, c.e), o = c.o, dim = i.caps !== 'onoff';
     const sub = o.show_state ? (i.on ? 'On' + (dim ? ` · ${i.lv}%` : '') : 'Off') : '';
-    return tile(c, { cls: 'lit', on: i.on, lit: true, sub, style: `--lv:${i.on ? i.lv : 0}%;--lc:${i.col}`, slider: dim && o.show_slider ? slider('light.turn_on', { entity_id: c.e }, 'brightness_pct', i.lv, { label: 'Brightness', dis: !i.on }) : '' });
+    return tile(c, { cls: 'lit', on: i.on, lit: true, sub, level: dim ? i.lv : null, style: `--lv:${i.on ? i.lv : 0}%;--lc:${i.col}`, slider: dim && o.show_slider ? slider('light.turn_on', { entity_id: c.e }, 'brightness_pct', i.lv, { label: 'Brightness', dis: !i.on }) : '' });
   },
   popup: c => openLightPopup(c),
 });
@@ -89,7 +89,7 @@ function openLightPopup(c) {
 const swOn = s => ['on', 'open', 'opening'].includes(s);
 kind({
   id: 'switch', square: () => true, name: 'Switch', domains: ['switch', 'input_boolean', 'valve', 'automation', 'script'], icon: 'power', grid: { columns: 6, rows: 3 }, tap: { action: 'toggle' }, hold: { action: 'more-info' },
-  opts: [SIZE, { k: 'accent', l: 'Accent colour', t: 'seg', o: [['accent', 'Accent'], ['water', 'Water'], ['air', 'Air'], ['warm', 'Warm']], d: 'accent' }, SHOW_STATE, ...SWITCH_OPTS],
+  opts: [SIZE, TILE_VIEW, ...ICON_OPTS, { k: 'accent', l: 'Accent colour', t: 'seg', o: [['accent', 'Accent'], ['water', 'Water'], ['air', 'Air'], ['warm', 'Warm']], d: 'accent' }, SHOW_STATE, ...SWITCH_OPTS],
   after: sxAfter,
   render(c) { const on = swOn(c.st(c.e)), valve = dom(c.e) === 'valve'; return tile(c, { cls: c.o.accent, on, lit: on, sub: c.o.show_state ? (valve ? (on ? 'Open' : 'Closed') : (on ? 'On' : 'Off')) : '' }); },
 });
@@ -97,12 +97,12 @@ kind({
 /* ----- fan ----- */
 kind({
   id: 'fan', square: () => true, name: 'Fan', domains: ['fan'], icon: 'fan', grid: { columns: 6, rows: 3 }, tap: { action: 'toggle' }, hold: { action: 'more-info' },
-  opts: [SIZE, { k: 'accent', l: 'Accent colour', t: 'seg', o: [['air', 'Air'], ['water', 'Water'], ['accent', 'Accent']], d: 'air' }, { k: 'steps', l: 'Speed control', t: 'seg', o: [['smooth', 'Smooth %'], ['3', '3 steps'], ['off', 'Hidden']], d: 'smooth' }, SHOW_STATE, ...SWITCH_OPTS],
+  opts: [SIZE, { k: 'accent', l: 'Accent colour', t: 'seg', o: [['air', 'Air'], ['water', 'Water'], ['accent', 'Accent']], d: 'air' }, { k: 'steps', l: 'Speed control', t: 'seg', o: [['smooth', 'Smooth %'], ['3', '3 steps'], ['off', 'Hidden']], d: 'smooth' }, TILE_VIEW, LEVEL, ...ICON_OPTS, SHOW_STATE, ...SWITCH_OPTS],
   after: sxAfter,
   render(c) {
     const on = c.st(c.e) === 'on', o = c.o, pc = num(c.at(c.e, 'percentage')) ?? (on ? 100 : 0), sp = o.steps === '3' ? (Math.round(pc / 33) * 33 || 33) : Math.max(1, pc);
     const can = (num(c.at(c.e, 'supported_features')) || 0) & 1;
-    return tile(c, { cls: o.accent + (on ? ' spin' : ''), on, lit: on, style: `--spd:${(2.2 - sp / 60).toFixed(2)}s`, sub: o.show_state ? (on ? pc + '%' : 'Off') : '', slider: o.steps !== 'off' && can ? slider('fan.set_percentage', { entity_id: c.e }, 'percentage', sp, { step: o.steps === '3' ? 33 : 1, min: o.steps === '3' ? 33 : 1, label: 'Speed', dis: !on }) : '' });
+    return tile(c, { cls: o.accent + (on ? ' spin' : ''), on, lit: on, level: can ? pc : null, style: `--spd:${(2.2 - sp / 60).toFixed(2)}s`, sub: o.show_state ? (on ? pc + '%' : 'Off') : '', slider: o.steps !== 'off' && can ? slider('fan.set_percentage', { entity_id: c.e }, 'percentage', sp, { step: o.steps === '3' ? 33 : 1, min: o.steps === '3' ? 33 : 1, label: 'Speed', dis: !on }) : '' });
   },
 });
 
