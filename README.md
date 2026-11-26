@@ -248,6 +248,7 @@ type: custom:nocturne-card
 kind: clock
 variant: analog          # digital | analog
 size: small              # small (square tile) | wide | slim (one-line time and date)
+tile_width: 4            # small only: width out of 12. 4 puts three across, 2 to 12
 name: Home               # optional label
 timezone: Pacific/Auckland   # optional, empty uses yours
 hour_format: auto        # auto | 12 | 24 (auto follows your Home Assistant profile)
@@ -260,6 +261,7 @@ timer_entity: timer.eggs
 
 | Option | Face | What it does |
 | --- | --- | --- |
+| `tile_width` | small | Width in twelfths of a section, 2 to 12 (default 4, three across). The whole face scales with it, and below about 100px only the time or dial and the weather remain. Changing it in the editor replaces any size set on the Layout tab. In a grid or stack card, that card sets the width. |
 | `show_seconds` | both | Small seconds after the digital time, or the second hand on the dial. |
 | `show_date` | both | The date. On a small analogue dial it sits under the centre. |
 | `blink` | digital | Blinking colon. |
@@ -274,7 +276,7 @@ timer_entity: timer.eggs
 | `alarm_entity` | digital, wide analogue | A sensor whose state is a date and time, for example the next alarm from the Companion app. Shows a chip such as "TUE 7:26 am". Hidden when there is no alarm. |
 | `timer_entity` | both | A `timer` entity. A chip counts down while it runs and dims when paused. On a small analogue dial the countdown replaces the date. |
 
-Use several clock cards with different `timezone` values for a world clock. The small clock is square by default like the other small tiles.
+Use several clock cards with different `timezone` values for a world clock. The small clock is square by default.
 
 ### Weather
 

@@ -55,6 +55,15 @@ function clkWeather(c, el) {
   box.innerHTML = `${wxAnimIcon(cond, night, 'var(--wxs)')}<b>${temp}</b>`;
 }
 
+/* a small clock is drawn for 184px and scaled down to the space it gets, so every part shrinks together */
+function clkFit(c) {
+  const el = c.shadowRoot && c.shadowRoot.querySelector('.clk'); if (!el || el.classList.contains('wide')) return;
+  const box = el.querySelector(':scope > .wxw, :scope > .cq'), W = el.clientWidth, H = el.clientHeight; if (!box || !W || !H) return;
+  const k = Math.min(1, W / 184, H / 184), css = k < 1 ? `right:auto;bottom:auto;width:${W / k}px;height:${H / k}px;transform:scale(${k});transform-origin:0 0` : '';
+  el.classList.toggle('tiny', Math.min(W, H) < 100);
+  if (box.dataset.fit !== css) { box.dataset.fit = css; box.style.cssText = css; }
+}
+
 function clkDial(o, wide) {
   const mk = o.markers, X = (r, a) => [(100 + r * Math.sin(a * Math.PI / 180)).toFixed(2), (100 - r * Math.cos(a * Math.PI / 180)).toFixed(2)];
   let g = '';
@@ -104,6 +113,7 @@ kind({
   opts: [
     { k: 'variant', l: 'Clock face', t: 'seg', o: [['digital', 'Digital'], ['analog', 'Analogue']], d: 'digital' },
     { ...SIZE, o: [...SIZE.o, ['slim', 'Slim bar']] },
+    { k: 'tile_width', l: 'Size: width out of 12 (4 puts three across, 6 two)', t: 'range', min: 2, max: 12, d: 4, when: c => !c.size || c.size === 'small' },
     { k: 'timezone', l: 'Time zone, for example Pacific/Auckland (empty uses yours)', t: 'text' },
     { k: 'hour_format', l: 'Hours', t: 'seg', o: [['auto', 'From your profile'], ['12', '12 hour'], ['24', '24 hour']], d: 'auto' },
     { k: 'show_seconds', l: 'Seconds', t: 'sw', d: true },
@@ -120,7 +130,8 @@ kind({
     { k: 'timer_entity', l: 'Timer to count down', t: 'entity', domains: ['timer'] },
   ],
   extraIds: () => ['sun.sun'],
-  gridFor: () => ({ columns: 6, rows: 3 }),
+  gridFor: c => ({ columns: clamp(Math.round(+c.o.tile_width) || 4, 2, 12), rows: 3 }),
+  ownSquare: true, minColumns: 2, resetLayout: ['size', 'tile_width'],
   autoRows: o => o.size === 'slim',
   /* the hourly forecast says what the sky is doing this hour; a weather entity without one falls back to its state */
   connect(c) {
@@ -131,7 +142,11 @@ kind({
   },
   after(c) {
     clkTick(c);
-    if (!c._clk) { c._clk = setInterval(() => clkTick(c), c.o.smooth && c.o.variant === 'analog' ? 60 : 250); c._subs.push(() => { clearInterval(c._clk); c._clk = null; }); }
+    if (c._cro) { c._cro.disconnect(); c._cro = null; }
+    const el = c.shadowRoot.querySelector('.clk');
+    if (el && typeof ResizeObserver !== 'undefined') { c._cro = new ResizeObserver(() => clkFit(c)); c._cro.observe(el); }
+    clkFit(c);
+    if (!c._clk) { c._clk = setInterval(() => clkTick(c), c.o.smooth && c.o.variant === 'analog' ? 60 : 250); c._subs.push(() => { clearInterval(c._clk); c._clk = null; if (c._cro) { c._cro.disconnect(); c._cro = null; } }); }
   },
   render(c) {
     const o = c.o, wide = o.size === 'wide', analog = o.variant === 'analog', F = clkFmt(c), chips = [];
@@ -146,6 +161,8 @@ kind({
     const info = `<div class="info">${analog ? '' : lab}${zone}${chips.length ? `<div class="chs">${chips.join('')}</div>` : ''}</div>`;
     const cls = `clk ${analog ? 'an' : 'dg'} ${wide ? 'wide' : ''} ${o.tint ? 'tint' : ''} ${o.smooth ? 'sm' : ''}`;
     const body = analog ? `<div class="cq"><div class="dial">${clkDial(o, wide)}</div>${wide ? `<div class="side">${lab}${read}${info}</div>` : ''}</div>` : `<div class="cq"><div class="main">${read}</div>${info}</div>`;
-    return `<div class="nc ${cls} ${hw}" style="--rows:3">${wx ? `<div class="wxw">${body}${wx}</div>` : body}</div>`;
+    /* a slot of one or two rows: let the clock shrink into it */
+    const rows = (c.cfg.grid_options || {}).rows, low = !wide && typeof rows === 'number' && rows < 3 ? 'low' : '';
+    return `<div class="nc ${cls} ${hw} ${low}" style="--rows:3">${wx ? `<div class="wxw">${body}${wx}</div>` : body}</div>`;
   },
 });

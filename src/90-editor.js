@@ -36,7 +36,9 @@ class NocturneCardEditor extends HTMLElement {
       this._form.addEventListener('value-changed', ev => {
         ev.stopPropagation(); const v = ev.detail.value, old = this._config; let next;
         if (v.kind !== old.kind) { next = { type: 'custom:nocturne-card', kind: v.kind }; if (v.name) next.name = v.name; }
-        else { const k = KINDS[v.kind], d = k ? k.defaults : {}; next = {}; Object.keys(v).forEach(key => { if (v[key] === undefined || v[key] === '' || (key in d && v[key] === d[key])) return; next[key] = v[key]; }); next.type = 'custom:nocturne-card'; }
+        else { const k = KINDS[v.kind], d = k ? k.defaults : {}; next = {}; Object.keys(v).forEach(key => { if (v[key] === undefined || v[key] === '' || (key in d && v[key] === d[key])) return; next[key] = v[key]; }); next.type = 'custom:nocturne-card';
+          /* a new size needs a new slot: drop a layout saved for the old one, or Home Assistant keeps using it */
+          if (k && (k.resetLayout || []).some(key => v[key] !== (old[key] === undefined ? d[key] : old[key]))) delete next.grid_options; }
         this._config = next; fire(this, 'config-changed', { config: next }); this._render();
       });
     }

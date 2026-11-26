@@ -304,7 +304,11 @@ class NocturneCard extends HTMLElement {
 
   _grid() { if (!this.k) return { columns: 6, rows: 3 }; const g = this.k.gridFor ? this.k.gridFor(this) : this.k.grid; return { columns: ['wide', 'slim'].includes(this.o.size) ? 12 : g.columns, rows: g.rows }; }
   /* square tiles: the height follows the width, so the tile needs no fixed number of rows */
-  _isSq() { return !!(this.k && this.o.square && this.k.square && this.k.square(this.o) && this._grid().columns <= 6); }
+  _isSq() {
+    const k = this.k; if (!(k && this.o.square && k.square && k.square(this.o))) return false;
+    /* a kind with its own size setting stays square at any width, unless a fixed number of rows was chosen: then it fits that space */
+    return k.ownSquare ? typeof ((this.cfg && this.cfg.grid_options) || {}).rows !== 'number' : this._grid().columns <= 6;
+  }
   getCardSize() { return this._grid().rows; }
-  getGridOptions() { const g = this._grid(); return this._isSq() || (this.k && this.k.autoRows && this.k.autoRows(this.o)) ? { columns: g.columns, rows: 'auto', min_columns: 3 } : { columns: g.columns, rows: g.rows, min_columns: 3, min_rows: 2 }; }
+  getGridOptions() { const g = this._grid(); const min = (this.k && this.k.minColumns) || 3; return this._isSq() || (this.k && this.k.autoRows && this.k.autoRows(this.o)) ? { columns: g.columns, rows: 'auto', min_columns: min } : { columns: g.columns, rows: g.rows, min_columns: min, min_rows: 2 }; }
 }

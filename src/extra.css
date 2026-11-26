@@ -154,6 +154,17 @@ ha-icon { display: inline-flex; }
 .an svg .cap { fill: var(--n-c2); stroke: var(--lc); stroke-width: 2; }
 .clk.noanim * { transition: none !important; }
 
+.nc.clk.low { min-height: 0; }
+/* a very small clock keeps just the time or the dial, with the weather underneath */
+.clk.tiny .dt, .clk.tiny .info, .clk.tiny svg .dw, .clk.tiny svg .lb, .clk.tiny .tm small { display: none; }
+.clk.tiny .cq { padding: 10px; }
+.clk.tiny.dg .cq { grid-template-rows: 1fr; }
+.clk.tiny.dg .tm { font-size: min(34cqw, 60cqh); }
+.clk.tiny.hw .cq { padding: 0; }
+.clk.tiny.hw .wxw { flex-direction: column; gap: 4px; }
+.clk.tiny.hw .wxc { --wxs: 58px; flex-direction: row; gap: 8px; }
+.clk.tiny.hw .wxc b { font-size: 34px; margin-top: 0; }
+
 /* clock weather: the clock takes what is left over, and scales to it */
 .clk .wxw { position: absolute; inset: 0; z-index: 2; box-sizing: border-box; display: flex; align-items: stretch; gap: 8px; padding: 12px; container-type: size; }
 .clk .wxw > .cq { position: relative; inset: auto; flex: 1; padding: 0; min-width: 0; min-height: 0; }
@@ -162,7 +173,7 @@ ha-icon { display: inline-flex; }
 .clk .wxc { --wxs: clamp(32px, min(44cqh, 26cqw), 104px); flex: none; align-self: center; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; cursor: pointer; }
 .clk .wxc[hidden] { display: none; }
 .clk .wxc svg { margin: calc(var(--wxs) * -.06) 0 !important; }
-.clk .wxc b { font: 500 max(14px, calc(var(--wxs) * .4))/1 var(--n-font-display); font-variant-numeric: tabular-nums; margin-top: 3px; color: var(--primary-text-color); }
+.clk .wxc b { font: 500 max(14px, calc(var(--wxs) * .4))/1 var(--n-font-display); margin-top: 3px; color: var(--primary-text-color); }
 .clk.cw-below .wxc { --wxs: clamp(30px, min(25cqh, 34cqw), 84px); }
 .dg.hw .tm { font-size: clamp(18px, min(25cqw, 40cqh), 90px); }
 .dg.wide.hw .tm { font-size: clamp(24px, min(15cqw, 56cqh), 80px); }
@@ -207,6 +218,8 @@ ha-icon { display: inline-flex; }
 .chm .ic.ring.lit::before { background: linear-gradient(160deg, var(--lc), color-mix(in srgb, var(--lc) 60%, #1a8f4d)); box-shadow: 0 0 16px color-mix(in srgb, var(--lc) 60%, transparent); }
 .chm .ic.ring.lit { color: #04210f; box-shadow: none; }
 .chm .ic.ring ha-icon { position: relative; --mdc-icon-size: 21px; } .chm .ic.ring .chr { position: absolute; inset: -3px; width: 58px; height: 58px; }
+/* let the ring's glow spill past its box, or it shows as a square */
+.ic.ring .chr { overflow: visible; }
 .chm .tgw .pchip { color: var(--primary-text-color); }
 .chbar { height: 7px; border-radius: 99px; background: var(--n-well); box-shadow: var(--n-inset); overflow: hidden; } .chbar i { display: block; height: 100%; border-radius: 99px; transition: width .5s; }
 .chm.on .nm span { color: var(--n-ok); }
