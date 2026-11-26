@@ -175,7 +175,7 @@ shuffle: true                    # shuffle and repeat buttons on both layouts
 power: auto                      # auto | show | hide
 media_view: slim                 # classic | slim | big
 shortcut_style: art              # art | names | pill
-shortcut_columns: 7              # 4 to 9
+shortcut_columns: 7              # 4 to 9: chips are this size even if you have fewer
 shortcut_wrap: false             # true puts the extra ones on a second row
 shortcut_gap: 6                  # px
 shortcuts:

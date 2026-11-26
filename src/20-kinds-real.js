@@ -89,7 +89,7 @@ kind({
     /* shortcuts: chips that play an album, playlist or station on this player */
     const list = o.shortcuts || [], low = x => String(x || '').toLowerCase(), now = [a.media_album_name, a.media_title, a.media_channel, a.media_playlist].map(low).filter(Boolean);
     const cs = o.shortcut_style || 'art';
-    const per = clamp(+o.shortcut_columns || 5, 3, 10), cn = Math.min(per, Math.max(4, list.length)), swipe = !o.shortcut_wrap && list.length > cn, cg = o.shortcut_gap === undefined ? 8 : num(o.shortcut_gap) || 0;
+    const per = clamp(+o.shortcut_columns || 5, 3, 10), cn = per, swipe = !o.shortcut_wrap && list.length > cn, cg = o.shortcut_gap === undefined ? 8 : num(o.shortcut_gap) || 0;
     const chips = list.length ? `<div class="ncqs ${cs} ${o.shortcut_wrap ? 'wrap' : ''}" style="--n:${swipe ? cn + 0.35 : cn};--gaps:${swipe ? cn : cn - 1};--cg:${cg}px">${list.map(q => { const hit = on && play && now.includes(low(q.media_id || q.name)); return `<button class="ncq ${hit ? 'now' : ''}" aria-label="Play ${esc(q.name)}" ${svcAttr('music_assistant.play_media', { entity_id: id, media_type: q.media_type || 'playlist', media_id: q.media_id || q.name, enqueue: q.enqueue || 'replace' })}><span class="qa" ${q.image ? `style="background-image:url('${esc(c.url(q.image))}')"` : ''}>${q.image ? '' : icn(q.icon || 'music', 18)}</span>${cs === 'art' ? '' : `<em>${esc(q.name)}</em>`}</button>`; }).join('')}</div>` : '';
     const view = o.media_view || 'classic';
     if (view !== 'classic') {
